@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "name": "preview-a.tgz",
+      "app": "demo",
+      "version": "",
+      "size": 2048,
+      "md5": "0b7d288b9d3d8b0901ac6d3efa7b7679",
+      "uploaded_at": 1790157551.972417,
+      "src": "demo/preview-a.tgz"
+    },
+    {
+      "name": "preview-b.tgz",
+      "app": "other",
+      "version": "",
+      "size": 2048,
+      "md5": "0b7d288b9d3d8b0901ac6d3efa7b7679",
+      "uploaded_at": 1790157552.0844133,
+      "src": "demo/preview-b.tgz"
+    }
+  ]
+}

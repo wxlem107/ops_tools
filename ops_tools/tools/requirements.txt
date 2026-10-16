@@ -1,0 +1,35 @@
+# ============================================================================
+# 依赖清单：同时兼容 Python 2.7.5+ 与 Python 3.7.5+
+# 安装：  python -m pip install -r requirements.txt
+#
+# 说明：
+#   1) 本目录下仅 diff_file_dir_jar_excel.py 需要 Flask / openpyxl；
+#      web_shell.py、upload_server.py、ops_Platform.py 均只依赖标准库，无需安装第三方包。
+#   2) 使用 PEP 508 环境标记（environment markers），pip 会按当前 Python 版本
+#      自动挑选唯一匹配的一行，因此在 2.7.5 / 3.7.5+ 上都能直接装上可用版本。
+#   3) 传递依赖固定到「最后一个支持该 Python 版本」的版本，避免解析到只支持新解释器的新版。
+# ============================================================================
+
+# ------------------------------ Flask ------------------------------
+flask==1.1.4   ; python_version < "3"
+flask==2.2.5   ; python_version >= "3.7" and python_version < "3.8"
+flask==3.0.3   ; python_version >= "3.8"
+
+# ----------------------------- openpyxl ----------------------------
+openpyxl==2.6.4   ; python_version < "3"
+openpyxl==3.0.10  ; python_version >= "3.7" and python_version < "3.8"
+openpyxl==3.1.5   ; python_version >= "3.8"
+
+# ----------------- Flask 传递依赖（仅 Python 2.7 需要下调固定） -----------------
+Werkzeug==1.0.1     ; python_version < "3"
+Jinja2==2.11.3      ; python_version < "3"
+MarkupSafe==1.1.1   ; python_version < "3"
+itsdangerous==1.1.0 ; python_version < "3"
+click==7.1.2        ; python_version < "3"
+
+# Python 3.7：Werkzeug 2.3+ 要求 3.8+，需固定在 2.2.x
+Werkzeug==2.2.3     ; python_version >= "3.7" and python_version < "3.8"
+
+# --------------- openpyxl 2.6.4 传递依赖（仅 Python 2.7 需要） ---------------
+et-xmlfile==1.0.1   ; python_version < "3"
+jdcal==1.4.1        ; python_version < "3"

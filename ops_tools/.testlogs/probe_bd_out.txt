@@ -1,0 +1,18 @@
+两个服务已就绪
+纳管: 200 {"status": "success", "message": "已添加 172.19.196.130", "server": {"name": "172.19.196.130", "host": "127.0.0.1", "upload
+平台代理响应: HTTP 200
+  Server: opslib 
+  Date: Tue, 22 Sep 2026 05:54:33 GMT
+  Content-Type: application/zip
+  Content-Length: 614698
+  X-Request-Id: 7f30cfe71c2e
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Credentials: true
+  Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+  Access-Control-Allow-Headers: Content-Type, X-Auth-Token, X-Requested-With, X-Upload-Id, X-Chunk-Index, X-Compare-Token, Range
+  Access-Control-Expose-Headers: Content-Length, Content-Disposition, X-Total-Count, X-Request-Id
+  Access-Control-Max-Age: 86400
+  Content-Disposition: attachment; filename*=UTF-8''batch_20260922_135433.zip
+body 字节数: 614698 前8字节: b'PK\x03\x04\x14\x00\x00\x00'
+直连 upload_server: HTTP 200 bytes 307360 b'PK\x03\x04'
+探测完成，目录: C:\Users\ADMINI~1\AppData\Local\Temp\bd_probe_hwrq1iol

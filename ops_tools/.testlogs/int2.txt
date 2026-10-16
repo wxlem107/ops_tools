@@ -1,0 +1,16 @@
+compile OK
+  [OK]   分片上传成功
+  [OK]   分片合并落盘
+  [OK]   多分片任务创建成功
+  [OK]   多分片拼接完成
+  [OK]   乱序分片按 index 正确拼接
+  [OK]   分片不全时 complete 报 409
+  [OK]   分片不全时不留半截文件
+  [FAIL] 经代理创建分片任务: 校验返回假值
+  [FAIL] 经代理分片上传完成: 校验返回假值
+  [FAIL] 经代理上传内容一致: [Errno 2] No such file or directory: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\ops_integration_mnjyr2k7\\uploads\\relay_demo.bin'
+  [FAIL] 同步执行命令: 校验返回假值
+  [OK]   健康检查失败自动回滚
+通过 49 项，失败 4 项
+失败明细:
+EXIT=1

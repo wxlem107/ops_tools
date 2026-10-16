@@ -1,0 +1,16 @@
+{
+  "sessions": {
+    "e0a570efb228d7c012630132dc3529d3ec54c9c812baaee9": {
+      "username": "admin",
+      "role": "admin",
+      "servers": [
+        "*"
+      ],
+      "ip": "127.0.0.1",
+      "created": 1790157551.8738408,
+      "last_seen": 1790157551.8738408,
+      "expires": 1790200751.8738408,
+      "via": "password"
+    }
+  }
+}

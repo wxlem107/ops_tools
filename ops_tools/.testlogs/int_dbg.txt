@@ -1,0 +1,11 @@
+DEBUG relay_init: {'status': 'error', 'code': 'bad_request', 'message': '转发类型仅支持 upload / shell'}
+DEBUG relay_chunk: status=400 body=<!DOCTYPE HTML>
+  [FAIL] 经代理创建分片任务: 校验返回假值
+  [FAIL] 经代理分片上传完成: 校验返回假值
+  [FAIL] 经代理上传内容一致: [Errno 2] No such file or directory: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\ops_integration_5w14pl7a\\uploads\\relay_demo.bin'
+  [OK]   健康检查失败自动回滚
+通过 50 项，失败 3 项
+失败明细:
+  - 经代理创建分片任务: 校验返回假值
+  - 经代理分片上传完成: 校验返回假值
+  - 经代理上传内容一致: [Errno 2] No such file or directory: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\ops_integration_5w14pl7a\\uploads\\relay_demo.bin'

@@ -1,0 +1,2 @@
+compile OK
+未发现漏写 IOError 的 except 子句（可接受项 6 处）—— 通过 ✅ (exit=0)

@@ -1,0 +1,12 @@
+compile OK: tools/upload_server.py
+compile OK: verify_integration.py
+compile OK: verify_py2_excepts.py
+--- lint ---
+py2 异常捕获审查（漏写 IOError 的 except 子句）
+扫描目录: opslib, tools, 运维工具管理页面
+------------------------------------------------------------------------
+
+========================================================================
+未发现漏写 IOError 的 except 子句（可接受项 6 处）—— 通过 ✅
+
+LINT_EXIT=0

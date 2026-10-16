@@ -1,0 +1,14 @@
+hasattr(bytes, "hex") in this interpreter = True
+hasattr(Py2Bytes(b""), "hex")       = False   <- 模拟 py2
+
+[py3 原生] hash 类型=str 长度=64  形如 '614f7028645f6a8dbf81e1ba'
+[py3 原生] verify_password(Admin_123!) = True
+
+[模拟 py2] hash 类型=Py2Bytes 长度=32
+[模拟 py2] hash 是 hex 文本吗？ False
+[模拟 py2] verify_password 推导出的 dklen = 16（应为 32）
+[模拟 py2] verify_password(Admin_123!) = False   <- 登录结果
+
+[JSON] dumps(raw bytes) 在 py3 直接抛错，py2 则把原始字节写进 JSON 文本，
+       而落盘前经过 to_text(..., "replace") -> 不可逆损坏。演示 to_text:
+        to_text(b'\x9f\xfe\x00ab') = '��\x00ab'

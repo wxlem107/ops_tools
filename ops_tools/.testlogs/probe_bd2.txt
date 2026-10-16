@@ -1,0 +1,13 @@
+两个服务已就绪
+纳管: 409 {"status": "error", "code": "conflict", "message": "名称已存在"}
+平台代理响应: HTTP 200
+  Server: opslib 
+  Date: Tue, 22 Sep 2026 06:01:58 GMT
+  Content-Type: application/zip
+  Content-Disposition: attachment; filename*=UTF-8''batch_20260922_140158.zip
+  Transfer-Encoding: chunked
+body 字节数: 307360 前8字节: b'PK\x03\x04\x14\x00\x00\x00'
+zip 条目: ['N-CPMCT_20260917.3.1.8.01-1.zip']
+不存在路径: HTTP 404 application/zip b'{"status": "error", "message": "\xe6\xb2\xa1\xe6\x9c\x89\xe5\x8f\xaf\xe4\xb8\x8b\xe8\xbd\xbd\xe7\x9a\x84\xe6\x96\x87\xe4\xbb\xb6"}'
+直连 upload_server: HTTP 200 bytes 307360 b'PK\x03\x04'
+探测完成，目录: C:\Users\ADMINI~1\AppData\Local\Temp\bd_probe_k4b7qn4b

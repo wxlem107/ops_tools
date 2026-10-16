@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>文件上传服务器 - 目录浏览 / 分片上传</title>
+    <style>
+        body { font-family: "Microsoft YaHei", sans-serif; background: #f0f2f5; margin: 0; padding: 30px; }
+        .container { width: 100%; max-width: 1200px; margin: 0 auto; }
+        .box { background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h2 { text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; }
+
+        .upload-area {
+            border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 8px;
+            cursor: pointer; transition: all 0.3s ease; margin-bottom: 20px;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #0052d9; background: #e6f0ff; transform: scale(1.01);
+        }
+        .file-info { margin-top: 15px; font-size: 14px; color: #666; font-weight: bold; min-height: 20px;}
+        .file-icon { font-size: 40px; margin-bottom: 10px; display: block; }
+
+        .btn-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; font-size: 14px; cursor: pointer; transition: 0.3s; }
+        .btn-primary { background: #0052d9; color: #fff; }
+        .btn-primary:hover { background: #003cab; }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-secondary:hover { background: #e0e0e0; }
+        .btn-danger { background: #dc3545; color: #fff; }
+        .btn-danger:hover { background: #b02a37; }
+        .btn:disabled { background: #a0cfff; cursor: not-allowed; color: #fff; }
+
+        .progress-container { width: 100%; background: #e9ecef; border-radius: 20px; margin: 15px 0; overflow: hidden; display: none; height: 24px; position: relative; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #0052d9, #00c4b6); transition: width 0.2s ease; border-radius: 20px; }
+        .progress-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: bold; color: #333; }
+
+        .upload-queue { display: none; margin: 12px 0; max-height: 220px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12px; }
+        .upload-queue table { width: 100%; border-collapse: collapse; }
+        .upload-queue th { background: #f9fafb; text-align: left; padding: 6px 10px; color: #6b7280; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; }
+        .upload-queue td { padding: 5px 10px; border-bottom: 1px solid #f3f4f6; }
+        .upload-queue tr:last-child td { border-bottom: none; }
+        .upload-queue .fname { word-break: break-all; }
+        .q-status { font-weight: bold; white-space: nowrap; }
+        .q-wait { color: #9ca3af; } .q-run { color: #2563eb; } .q-ok { color: #16a34a; } .q-fail { color: #dc2626; }
+        .q-dur { white-space: nowrap; }
+        .q-speed { white-space: nowrap; color: #2563eb; }
+
+        .disk-info { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+        .disk-info .di-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: #374151; font-weight: 600; gap: 10px; flex-wrap: wrap; }
+        .disk-info .di-head .di-sub { font-weight: 400; color: #6b7280; font-size: 12px; }
+        .disk-info .di-bar { height: 10px; background: #e9ecef; border-radius: 5px; overflow: hidden; }
+        .disk-info .di-fill { height: 100%; background: linear-gradient(90deg, #0052d9, #00c4b6); transition: width .3s; border-radius: 5px; }
+        .disk-info .di-fill.warn { background: #f59e0b; }
+        .disk-info .di-fill.danger { background: #dc2626; }
+        .disk-info .di-tip { margin-top: 6px; color: #9ca3af; font-size: 12px; }
+
+        .msg { padding: 12px; border-radius: 5px; text-align: center; font-weight: bold; display: none; margin-top: 15px; }
+        .success { background: #d4edda; color: #155724; display: block; }
+        .error { background: #f8d7da; color: #721c24; display: block; }
+
+        /* ============ 主区：左侧目录树 + 右侧文件列表 ============ */
+        .main-flex { display: flex; gap: 20px; align-items: flex-start; }
+        .tree-side { width: 280px; flex: none; }
+        .list-side { flex: 1; min-width: 0; }
+
+        .tree-box { background: #fff; padding: 16px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .tree-box .tree-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .tree-box .tree-refresh { font-size: 12px; padding: 4px 10px; }
+        .tree-ul { list-style: none; margin: 0; padding: 0; }
+        .tree-li { list-style: none; }
+        .tree-row { display: flex; align-items: center; padding: 3px 6px; border-radius: 5px; cursor: pointer; font-size: 13px; color: #374151; }
+        .tree-row:hover { background: #f1f5f9; }
+        .tree-row.active { background: #e6f0ff; color: #0052d9; font-weight: 600; }
+        .tree-toggle { display: inline-block; width: 16px; text-align: center; color: #9ca3af; user-select: none; }
+        .tree-label { padding-left: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .breadcrumb { font-size: 14px; color: #374151; margin-bottom: 12px; padding: 8px 12px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .breadcrumb .crumb { cursor: pointer; color: #0052d9; }
+        .breadcrumb .crumb:hover { text-decoration: underline; }
+        .breadcrumb .sep { color: #9ca3af; margin: 0 4px; }
+
+        .list-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+        .list-toolbar input[type="text"], .list-toolbar select, .list-toolbar input[type="datetime-local"] {
+            padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;
+        }
+        .list-toolbar .search-input { width: 200px; }
+        .list-toolbar .time-input { width: 170px; }
+
+        .batch-bar { display: none; align-items: center; gap: 10px; background: #eef4ff; border: 1px solid #bcd0f7; border-radius: 8px; padding: 8px 14px; margin-bottom: 12px; font-size: 13px; color: #1f2937; flex-wrap: wrap; }
+        .batch-bar .bb-count { font-weight: 700; color: #0052d9; }
+
+        .file-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .file-table th, .file-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .file-table th { background: #f8f9fa; color: #666; font-weight: 600; }
+        .file-table tr:hover { background: #f8f9fa; }
+        .file-table th.sortable { cursor: pointer; user-select: none; }
+        .file-table th.sortable:hover { color: #0052d9; }
+        .file-table .op a { margin-right: 8px; color: #0052d9; cursor: pointer; text-decoration: none; }
+        .file-table .op a.del { color: #dc3545; }
+        .file-table td.cb, .file-table th.cb { width: 30px; padding: 0 4px; text-align: center; }
+        .empty-tip { text-align: center; color: #999; padding: 30px; }
+
+        .pager { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: #374151; }
+        .pager .pg-info { margin: 0 6px; }
+        .pager .pg-jump input { width: 56px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; }
+        .pager .pg-size select { padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; }
+
+        .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+        input[type="file"] { display: none; }
+
+        .login-mask { position: fixed; inset: 0; background: #eef1f5; z-index: 100; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #fff; padding: 30px 34px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.12); text-align: center; width: 340px; }
+        .login-box h2 { margin: 0 0 8px; } .login-box p { color: #6b7280; font-size: 13px; margin: 0 0 16px; }
+        .login-box input { width: 100%; padding: 9px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 12px; box-sizing: border-box; }
+        .login-box .btn { width: 100%; }
+        .login-box .err { color: #dc2626; font-size: 12px; margin-top: 6px; display: none; }
+    </style>
+</head>
+<body>
+    <div id="loginMask" class="login-mask" style="display:none;">
+        <div class="login-box">
+            <h2>🔐 服务器上传</h2>
+            <p>请输入访问令牌</p>
+            <input type="password" id="loginToken" placeholder="访问令牌">
+            <button class="btn btn-primary" onclick="doLogin()">进入</button>
+            <div class="err" id="loginErr">访问令牌错误，请重试</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="box" id="diskBox" style="display:none;">
+            <div class="disk-info">
+                <div class="di-head">
+                    <span>💾 磁盘容量监控</span>
+                    <span class="di-sub" id="diskText">加载中...</span>
+                </div>
+                <div class="di-bar"><div class="di-fill" id="diskFill"></div></div>
+                <div class="di-tip" id="diskTip"></div>
+            </div>
+        </div>
+
+        <div class="box">
+            <h2>📁 文件 / 文件夹极速上传</h2>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">📄 选择文件</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('folderInput').click()">📂 选择文件夹</button>
+            </div>
+
+            <input type="file" id="fileInput" multiple>
+            <input type="file" id="folderInput" webkitdirectory directory multiple>
+
+            <div class="upload-area" id="dropArea">
+                <span class="file-icon">☁️</span>
+                <div>或将文件/文件夹 <strong>拖拽</strong> 到此处</div>
+                <div class="file-info" id="fileInfo">未选择任何内容</div>
+            </div>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-text" id="progressText">0%</div>
+            </div>
+
+            <div class="upload-queue" id="uploadQueue"></div>
+
+            <button class="btn btn-primary" id="uploadBtn" style="width: 100%;" disabled>开始上传</button>
+            <div class="msg" id="statusMsg"></div>
+        </div>
+
+        <div class="main-flex">
+            <!-- 左侧目录树 -->
+            <div class="tree-side">
+                <div class="tree-box">
+                    <div class="tree-title">
+                        <span>📂 目录树</span>
+                        <button class="btn btn-secondary tree-refresh" onclick="loadTree()">🔄 刷新</button>
+                    </div>
+                    <div id="treeBox"><div class="empty-tip">加载中...</div></div>
+                </div>
+            </div>
+
+            <!-- 右侧文件列表 -->
+            <div class="list-side">
+                <div class="box" style="margin-bottom:0;">
+                    <div class="breadcrumb" id="breadcrumb"><span class="crumb" onclick="navTo('')">全部文件</span></div>
+
+                    <div class="list-toolbar">
+                        <input type="text" id="searchInput" class="search-input" placeholder="🔍 搜索文件名...">
+                        <select id="typeFilter" onchange="onTypeChange()">
+                            <option value="">全部类型</option>
+                        </select>
+                        <input type="datetime-local" id="timeFrom" class="time-input" title="开始时间">
+                        <span style="color:#9ca3af;">~</span>
+                        <input type="datetime-local" id="timeTo" class="time-input" title="结束时间">
+                        <button class="btn btn-secondary" onclick="onTimeChange()">时间筛选</button>
+                        <button class="btn btn-secondary" onclick="clearTime()">清除</button>
+                        <button class="btn btn-secondary" onclick="loadFileList()" style="padding: 6px 15px; font-size: 12px;">🔄 刷新列表</button>
+                    </div>
+
+                    <div class="batch-bar" id="batchBar">
+                        <span>已选择 <span class="bb-count" id="batchCount">0</span> 项</span>
+                        <button class="btn btn-primary" onclick="batchDownload()">⬇ 批量下载</button>
+                        <button class="btn btn-danger" onclick="batchDelete()">🗑 批量删除</button>
+                        <button class="btn btn-secondary" onclick="clearSelection()">取消选择</button>
+                    </div>
+
+                    <div id="fileListContent">
+                        <div class="empty-tip">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">保存路径: {{upload_dir}} | 版本 {{version}} | 支持目录树浏览 / 分页 / 筛选 / 分片断点续传</div>
+    </div>
+
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const fileInfo = document.getElementById('fileInfo');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const statusMsg = document.getElementById('statusMsg');
+        const fileInput = document.getElementById('fileInput');
+        const folderInput = document.getElementById('folderInput');
+
+        let selectedFiles = [];
+        let totalUploadSize = 0;
+        let uploadedSize = 0;
+        let token = localStorage.getItem('upload_token') || '';
+        let tokenError = false;
+        window.needLogin = false;
+
+        // ============ 当前目录 / 筛选 / 排序 / 分页 状态 ============
+        let currentPath = '';
+        let currentQ = '';
+        let currentType = '';
+        let currentSort = '';
+        let currentOrder = 'asc';
+        let currentPage = 1;
+        let currentSize = 50;
+        let currentTimeFrom = 0;
+        let currentTimeTo = 0;
+        let fileListCache = [];
+        let treeDirs = [];
+        let expandedNodes = {};
+
+        // 分片大小：启动上传时以服务端 /api/health 上报的 chunk_size 为准（见 syncServerChunkSize），
+        // 这样服务端用 --chunk-size-mb 调大分片才能真正生效，而不是页面写死 16MB。
+        let CHUNK_SIZE = 16 * 1024 * 1024;
+        const CHUNK_RETRY = 3;                // 单个分片失败重试次数
+        // 向服务端确认分片大小：高时延链路用大分片能显著减少请求往返开销
+        async function syncServerChunkSize() {
+            try {
+                const res = await fetch('/api/health');
+                const d = await res.json();
+                const n = Number(d && d.chunk_size);
+                if (n > 0 && n !== CHUNK_SIZE) {
+                    CHUNK_SIZE = n;
+                    console.log('按服务端配置使用分片大小: ' + (n / 1024 / 1024) + 'MB');
+                }
+            } catch (e) { /* 探测失败则沿用默认值 */ }
+        }
+        // 生成文件断点续传标识（基于路径+大小+修改时间，服务端据此复用已传分片）
+        function fileKey(file, relPath) {
+            const str = (relPath || file.name) + '|' + file.size + '|' + (file.lastModified || 0);
+            let h1 = 0x811c9dc5, h2 = 0x01000193;
+            for (let i = 0; i < str.length; i++) {
+                const c = str.charCodeAt(i);
+                h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+                h2 = Math.imul(h2 ^ c, 0x85ebca6b) >>> 0;
+            }
+            return ('00000000' + h1.toString(16)).slice(-8) + ('00000000' + h2.toString(16)).slice(-8);
+        }
+
+        function authHeaders(extra) {
+            const h = extra || {};
+            if (token) h['X-Auth-Token'] = token;
+            return h;
+        }
+
+        // ================= 登录鉴权（与集中管理平台一致） =================
+        function showLogin() {
+            document.getElementById('loginMask').style.display = 'flex';
+            setTimeout(() => document.getElementById('loginToken').focus(), 50);
+        }
+        function hideLogin() {
+            document.getElementById('loginMask').style.display = 'none';
+        }
+        async function doLogin() {
+            token = document.getElementById('loginToken').value.trim();
+            localStorage.setItem('upload_token', token);
+            document.getElementById('loginErr').style.display = 'none';
+            try {
+                const res = await fetch('/api/list?page=1&size=1', { headers: authHeaders() });
+                if (res.ok) {
+                    hideLogin();
+                    afterLogin();
+                } else {
+                    localStorage.removeItem('upload_token');
+                    token = '';
+                    document.getElementById('loginErr').style.display = 'block';
+                }
+            } catch (e) {
+                localStorage.removeItem('upload_token');
+                token = '';
+                document.getElementById('loginErr').innerText = '无法连接服务器';
+                document.getElementById('loginErr').style.display = 'block';
+            }
+        }
+        async function tryAutoLogin() {
+            if (!window.needLogin || !localStorage.getItem('upload_token')) return false;
+            token = localStorage.getItem('upload_token');
+            try {
+                const res = await fetch('/api/list?page=1&size=1', { headers: authHeaders() });
+                if (res.ok) { hideLogin(); afterLogin(); return true; }
+                token = '';
+                return false;
+            } catch (e) { return false; }
+        }
+        // 登录成功后初始化列表/树/类型下拉/磁盘监控
+        function afterLogin() {
+            loadDiskInfo();
+            loadTypes();
+            loadTree();
+            loadFileList();
+        }
+
+        // ================= 1. 核心：递归解析拖拽的文件夹 =================
+        async function readAllDirectoryEntries(dirReader) {
+            return new Promise((resolve) => {
+                const entries = [];
+                const readBatch = () => {
+                    dirReader.readEntries((batch) => {
+                        if (batch.length === 0) { resolve(entries); }
+                        else { entries.push(...batch); readBatch(); }
+                    }, () => resolve(entries));
+                };
+                readBatch();
+            });
+        }
+
+        async function traverseFileTree(item, path) {
+            if (item.isFile) {
+                return new Promise(resolve => {
+                    item.file(file => {
+                        Object.defineProperty(file, 'webkitRelativePath', { value: path + file.name, writable: false });
+                        resolve([file]);
+                    });
+                });
+            } else if (item.isDirectory) {
+                const dirReader = item.createReader();
+                const entries = await readAllDirectoryEntries(dirReader);
+                const promises = entries.map(entry => traverseFileTree(entry, path + item.name + "/"));
+                const results = await Promise.all(promises);
+                return results.flat();
+            }
+            return [];
+        }
+
+        async function getFilesFromDataTransferItems(items) {
+            const promises = [];
+            for (let i = 0; i < items.length; i++) {
+                const entry = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+                if (entry) promises.push(traverseFileTree(entry, ""));
+            }
+            const results = await Promise.all(promises);
+            return results.flat();
+        }
+
+        // ================= 2. 文件选择与拖拽逻辑 =================
+        let queueItems = [];
+        function fmtDur(ms) {
+            if (ms == null) return '-';
+            const s = ms / 1000;
+            if (s < 60) return s.toFixed(2) + ' 秒';
+            const m = Math.floor(s / 60);
+            return m + ' 分 ' + (s % 60).toFixed(0) + ' 秒';
+        }
+        function fmtSpeed(bps) {
+            if (bps == null || !isFinite(bps) || bps <= 0) return '-';
+            if (bps < 1024) return bps.toFixed(0) + ' B/s';
+            if (bps < 1024 * 1024) return (bps / 1024).toFixed(1) + ' KB/s';
+            return (bps / 1024 / 1024).toFixed(2) + ' MB/s';
+        }
+        function renderQueue() {
+            const box = document.getElementById('uploadQueue');
+            if (!queueItems.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+            box.style.display = 'block';
+            let html = '<table><thead><tr><th>文件</th><th>大小</th><th>进度</th><th>速度</th><th>状态</th><th>耗时</th></tr></thead><tbody>';
+            queueItems.forEach(it => {
+                const cls = it.state === 'done' ? 'q-ok' : it.state === 'failed' ? 'q-fail' : it.state === 'uploading' ? 'q-run' : 'q-wait';
+                const txt = it.state === 'done' ? '✅ 完成' : it.state === 'failed' ? '❌ 失败' : it.state === 'uploading' ? '⏳ 上传中' : '⏸ 等待';
+                const dur = it.state === 'done' || it.state === 'failed' ? fmtDur(it.timeMs)
+                          : it.state === 'uploading' ? '…' : '-';
+                const speed = it.state === 'uploading' ? fmtSpeed(it.speed) : '-';
+                const pct = it.state === 'done' ? '100%' : it.state === 'uploading' ? (it.pct || 0) + '%' : '-';
+                html += `<tr><td class="fname">${escapeHtml(it.name)}</td><td>${fmtSize(it.size)}</td>` +
+                        `<td>${pct}</td>` +
+                        `<td class="q-speed">${speed}</td>` +
+                        `<td class="q-status ${cls}">${txt}</td><td class="q-dur">${dur}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            box.innerHTML = html;
+        }
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(f => f.size > 0 || f.webkitRelativePath);
+            if (selectedFiles.length === 0) {
+                fileInfo.innerText = "未选择任何有效文件 (空文件夹将被忽略)";
+                uploadBtn.disabled = true;
+                return;
+            }
+            totalUploadSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
+            const sizeMB = (totalUploadSize / 1024 / 1024).toFixed(2);
+            const isFolder = selectedFiles.some(f => f.webkitRelativePath);
+            fileInfo.innerText = `已选择: ${selectedFiles.length} 个文件 ${isFolder ? '(包含文件夹结构)' : ''}，共 ${sizeMB} MB`;
+            uploadBtn.disabled = false;
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressText.innerText = '0%';
+            statusMsg.className = 'msg';
+            statusMsg.style.display = 'none';
+            uploadedSize = 0;
+            queueItems = selectedFiles.map(f => ({
+                name: f.webkitRelativePath || f.name,
+                fileName: f.name,
+                relPath: f.webkitRelativePath || '',
+                size: f.size,
+                state: 'waiting',
+                timeMs: null,
+                speed: 0,
+                pct: 0,
+                loaded: 0,
+                doneBytes: 0,
+                inflight: {},
+                samples: [],
+                xhrs: new Set(),
+                totalChunks: 0,
+                pending: 0,
+                startTime: null,
+                _lastRender: 0
+            }));
+            renderQueue();
+        }
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        folderInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        ['dragenter', 'dragover'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false));
+        ['dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false));
+
+        dropArea.addEventListener('drop', async (e) => {
+            preventDefaults(e);
+            const items = e.dataTransfer.items;
+            if (!items) return;
+            fileInfo.innerText = "⏳ 正在解析拖拽的文件夹，请稍候...";
+            uploadBtn.disabled = true;
+            try {
+                const files = await getFilesFromDataTransferItems(items);
+                handleFiles(files);
+            } catch (err) {
+                console.error("解析拖拽文件失败:", err);
+                fileInfo.innerText = "❌ 解析拖拽内容失败，请尝试使用'选择文件夹'按钮";
+            }
+        }, false);
+
+        // ================= 3. 智能并发上传（全局分片并发池） =================
+        // 单片文件走 /api/chunk/put（1 次往返）；多分片文件先 init，再把所有分片
+        // 推进全局并发池并行上传 —— 单个大文件也能用满 6 条连接，而不是逐片串行。
+        uploadBtn.addEventListener('click', async function() {
+            if (selectedFiles.length === 0) return;
+            uploadBtn.disabled = true;
+            uploadBtn.innerText = '准备上传...';
+            statusMsg.className = 'msg';
+            statusMsg.innerText = '⏳ 正在并发上传，请勿关闭页面...';
+            statusMsg.style.display = 'block';
+            progressContainer.style.display = 'block';
+
+            await syncServerChunkSize();   // 按服务端配置确定分片大小后再切片排队
+
+            let successCount = 0, failCount = 0;
+            const totalStartTime = Date.now();
+            let pendingFiles = selectedFiles.length;
+
+            // 全局并发池：同一文件的多个分片并行上传（原先单文件是逐片串行的，
+            // 单个大文件只能占 1 条连接，带宽利用率很低）
+            const CHUNK_CONCURRENCY = 6;   // 浏览器对单源并发连接数约 6，再多也会排队
+            const INIT_LIMIT = 4;          // 同时进行 init 的文件数
+            const chunkTasks = [];         // 待传任务：{kind:'put'|'chunk', ...}
+            const fileQueue = [];          // 待 init 的多分片文件
+            let activeChunks = 0, startingFiles = 0;
+
+            const sumInflight = (item) => {
+                let s = 0;
+                for (const k in item.inflight) s += item.inflight[k];
+                return s;
+            };
+            // 滑动窗口测速（近 3 秒），比「单分片字节 / 单分片耗时」稳定得多
+            const addSample = (item) => {
+                const now = Date.now();
+                item.samples.push({ t: now, b: item.doneBytes + sumInflight(item) });
+                while (item.samples.length > 2 && now - item.samples[0].t > 3000) item.samples.shift();
+                if (item.samples.length >= 2) {
+                    const a = item.samples[0], b = item.samples[item.samples.length - 1];
+                    const dt = (b.t - a.t) / 1000;
+                    if (dt > 0.2) item.speed = Math.max(0, (b.b - a.b) / dt);
+                }
+            };
+            const paintProgress = (item) => {
+                const sent = item.doneBytes + sumInflight(item);
+                item.pct = item.size ? Math.min(99, Math.round(sent / item.size * 100)) : 0;
+                const percent = totalUploadSize
+                    ? Math.min(100, Math.round((uploadedSize + sent) / totalUploadSize * 100)) : 0;
+                progressBar.style.width = percent + '%';
+                progressText.innerText = percent + '%';
+                uploadBtn.innerText = '上传中... ' + percent + '%';
+                if (Date.now() - item._lastRender >= 200) { item._lastRender = Date.now(); renderQueue(); }
+            };
+
+            const markFileFailed = (item, msg) => {
+                if (msg === '401') { tokenError = true; showLogin(); }
+                item.state = 'failed';
+                item.timeMs = Date.now() - (item.startTime || Date.now());
+                item.speed = 0;
+                item.inflight = {};
+                item.xhrs.forEach(x => { try { x.abort(); } catch (e) {} });
+                item.xhrs.clear();
+                renderQueue();
+            };
+
+            const onFileSettled = (ok) => {
+                if (ok) successCount++; else failCount++;
+                pendingFiles--;
+                if (pendingFiles > 0) return;
+                progressBar.style.width = '100%';
+                progressText.innerText = '100%';
+                uploadBtn.disabled = false;
+                uploadBtn.innerText = '开始上传';
+                const totalDur = fmtDur(Date.now() - totalStartTime);
+                if (failCount === 0) {
+                    statusMsg.className = 'msg success';
+                    statusMsg.innerText = '✅ 成功上传 ' + successCount + ' 个文件，总耗时 ' + totalDur + '！';
+                } else if (successCount === 0) {
+                    statusMsg.className = 'msg error';
+                    statusMsg.innerText = tokenError
+                        ? '❌ 上传失败：访问令牌错误，请在弹出的登录框中输入正确的令牌后重试。'
+                        : '❌ 全部上传失败，请检查网络或服务器。';
+                } else {
+                    statusMsg.className = 'msg error';
+                    statusMsg.innerText = '⚠️ 上传完成：成功 ' + successCount + ' 个，失败 ' + failCount + ' 个，总耗时 ' + totalDur + '。';
+                }
+                loadFileList();
+                loadTree();   // 刷新目录树（新目录/文件会出现）
+                setTimeout(() => {
+                    fileInput.value = ''; folderInput.value = '';
+                    selectedFiles = []; uploadedSize = 0;
+                    queueItems = [];
+                    renderQueue();
+                    fileInfo.innerText = '未选择任何内容';
+                    progressContainer.style.display = 'none';
+                }, 2000);
+            };
+
+            const completeFile = (item) => {
+                const done = (ok) => {
+                    if (ok) {
+                        item.state = 'done'; item.pct = 100; item.speed = 0;
+                        item.loaded = item.size;
+                        item.timeMs = Date.now() - item.startTime;
+                    } else {
+                        markFileFailed(item, '合并分片失败');
+                    }
+                    renderQueue(); onFileSettled(ok);
+                };
+                fetch('/api/chunk/complete', {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    body: JSON.stringify({
+                        upload_id: item.uploadId, filename: item.fileName, relative_path: item.relPath,
+                        total_chunks: item.totalChunks, size: item.size, resume_key: item.resumeKey
+                    })
+                }).then(res => {
+                    if (res.status === 401) { tokenError = true; showLogin(); throw new Error('401'); }
+                    return res.json();
+                }).then(d => done(!!(d && d.status === 'success')))
+                  .catch(() => done(false));
+            };
+
+            // 单分片文件：三合一接口一次往返完成（原先是 init + 上传 + complete 三次）
+            const putSingle = (item, file) => new Promise((resolve) => {
+                const q = '?filename=' + encodeURIComponent(file.name)
+                        + '&relative_path=' + encodeURIComponent(item.relPath || '')
+                        + '&size=' + file.size;
+                const xhr = new XMLHttpRequest();
+                item.xhrs.add(xhr);
+                xhr.open('POST', '/api/chunk/put' + q, true);
+                const hs = authHeaders();
+                Object.keys(hs).forEach(k => xhr.setRequestHeader(k, hs[k]));
+                xhr.timeout = 600000;
+                xhr.upload.onprogress = (e) => {
+                    if (!e.lengthComputable) return;
+                    item.inflight = { 0: e.loaded };
+                    addSample(item); paintProgress(item);
+                };
+                const finish = (ok, msg) => {
+                    item.xhrs.delete(xhr);
+                    if (ok) {
+                        item.doneBytes = file.size;
+                        uploadedSize += file.size;
+                        item.state = 'done'; item.pct = 100; item.timeMs = Date.now() - item.startTime;
+                        renderQueue(); resolve(true);
+                    } else {
+                        markFileFailed(item, msg); resolve(false);
+                    }
+                };
+                xhr.onload = () => {
+                    let ok = false, msg = '';
+                    try {
+                        const d = JSON.parse(xhr.responseText);
+                        ok = (xhr.status === 200 && d.status === 'success');
+                        if (!ok) msg = (xhr.status === 401) ? '401' : ((d && d.message) || ('HTTP ' + xhr.status));
+                    } catch (e) { msg = '响应解析失败'; }
+                    finish(ok, msg);
+                };
+                xhr.onerror = () => finish(false, '网络错误');
+                xhr.ontimeout = () => finish(false, '上传超时');
+                xhr.onabort = () => finish(false, '已取消');
+                xhr.send(file);
+            });
+
+            // 分片传输：URL 恒定、参数走请求头 —— CORS 预检缓存键含完整 URL，
+            // URL 恒定后整轮上传只付一次 OPTIONS 预检（原先每片一次）
+            const runChunk = (task) => {
+                activeChunks++;
+                const item = task.item;
+                if (item.state !== 'uploading') {
+                    item.state = 'uploading'; item.startTime = Date.now(); renderQueue();
+                }
+                const xhr = new XMLHttpRequest();
+                item.xhrs.add(xhr);
+                xhr.open('POST', '/api/chunk/upload', true);
+                const hs = authHeaders();
+                hs['X-Upload-Id'] = task.uploadId;
+                hs['X-Chunk-Index'] = String(task.index);
+                Object.keys(hs).forEach(k => xhr.setRequestHeader(k, hs[k]));
+                xhr.timeout = 600000;
+                xhr.upload.onprogress = (e) => {
+                    if (!e.lengthComputable) return;
+                    item.inflight[task.index] = e.loaded;
+                    addSample(item); paintProgress(item);
+                };
+                const finish = (ok, msg) => {
+                    item.xhrs.delete(xhr);
+                    delete item.inflight[task.index];
+                    activeChunks = Math.max(0, activeChunks - 1);
+                    if (ok) {
+                        item.doneBytes += (task.end - task.start);
+                        uploadedSize += (task.end - task.start);
+                        item.pending--;
+                        if (item.pending <= 0) { completeFile(item); return; }
+                    } else if (item.state === 'uploading' && task.tries < CHUNK_RETRY) {
+                        task.tries++;
+                        setTimeout(() => {
+                            if (item.state === 'uploading') { chunkTasks.push(task); pump(); }
+                        }, 500 * task.tries);
+                    } else if (item.state === 'uploading') {
+                        if (msg === '401') { tokenError = true; showLogin(); }
+                        markFileFailed(item, msg);
+                        onFileSettled(false);
+                    }
+                    paintProgress(item);
+                    pump();
+                };
+                xhr.onload = () => {
+                    let ok = false, msg = '';
+                    try {
+                        const d = JSON.parse(xhr.responseText);
+                        ok = (xhr.status === 200 && d.status === 'success');
+                        if (!ok) msg = (xhr.status === 401) ? '401' : ((d && d.message) || ('HTTP ' + xhr.status));
+                    } catch (e) { msg = '响应解析失败'; }
+                    finish(ok, msg);
+                };
+                xhr.onerror = () => finish(false, '网络错误');
+                xhr.ontimeout = () => finish(false, '分片超时');
+                xhr.onabort = () => finish(false, '已取消');
+                xhr.send(task.file.slice(task.start, task.end));
+            };
+
+            // 多分片文件：先 init（限额并发），再把所有待传分片推进全局队列
+            const startFile = (idx) => {
+                const file = selectedFiles[idx];
+                const item = queueItems[idx];
+                item.resumeKey = fileKey(file, item.relPath);
+                return fetch('/api/chunk/init', {
+                    method: 'POST',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                    body: JSON.stringify({
+                        filename: file.name, relative_path: item.relPath, size: file.size,
+                        total_chunks: item.totalChunks, chunk_size: CHUNK_SIZE, resume_key: item.resumeKey
+                    })
+                }).then(res => {
+                    if (res.status === 401) { tokenError = true; showLogin(); throw new Error('401'); }
+                    return res.json();
+                }).then(d => {
+                    if (!d || d.status !== 'success') throw new Error((d && d.message) || '初始化分片上传失败');
+                    item.uploadId = d.upload_id;
+                    const cs = Number(d.chunk_size) || CHUNK_SIZE;
+                    if (cs !== CHUNK_SIZE) throw new Error('服务端分片大小与页面不一致，请调整 --chunk-size-mb');
+                    const uploadedSet = new Set(d.uploaded || []);
+                    item.state = 'uploading';
+                    item.startTime = Date.now();
+                    item.doneBytes = 0;
+                    item.pending = 0;
+                    for (let i = 0; i < item.totalChunks; i++) {
+                        const start = i * cs;
+                        const end = Math.min(file.size, start + cs);
+                        if (uploadedSet.has(i)) {
+                            item.doneBytes += (end - start);
+                            uploadedSize += (end - start);
+                            continue;
+                        }
+                        item.pending++;
+                        chunkTasks.push({ kind: 'chunk', item: item, file: file, uploadId: item.uploadId,
+                                          index: i, start: start, end: end, tries: 0 });
+                    }
+                    paintProgress(item);
+                    renderQueue();
+                    if (item.pending <= 0) completeFile(item);   // 断点续传：分片已齐全，直接收尾
+                }).catch(e => {
+                    markFileFailed(item, (e && e.message) || String(e));
+                    onFileSettled(false);
+                });
+            };
+
+            const runPut = (task) => {
+                activeChunks++;
+                const item = task.item;
+                item.state = 'uploading';
+                item.startTime = Date.now();
+                renderQueue();
+                putSingle(item, task.file).then((ok) => {
+                    activeChunks = Math.max(0, activeChunks - 1);
+                    onFileSettled(ok);
+                    pump();
+                });
+            };
+
+            const pump = () => {
+                while (startingFiles < INIT_LIMIT && fileQueue.length) {
+                    const idx = fileQueue.shift();
+                    startingFiles++;
+                    startFile(idx).then(() => { startingFiles--; pump(); },
+                                        () => { startingFiles--; pump(); });
+                }
+                while (activeChunks < CHUNK_CONCURRENCY && chunkTasks.length) {
+                    const task = chunkTasks.shift();
+                    if (task.item.state === 'failed' || task.item.state === 'done') continue;
+                    if (task.kind === 'put') runPut(task);
+                    else runChunk(task);
+                }
+            };
+
+            // 任务分派：单片文件直接进传输队列；多分片文件先排队做 init
+            selectedFiles.forEach((file, idx) => {
+                const item = queueItems[idx];
+                const totalChunks = file.size ? Math.ceil(file.size / CHUNK_SIZE) : 1;
+                item.totalChunks = totalChunks;
+                if (totalChunks <= 1) chunkTasks.push({ kind: 'put', item: item, file: file });
+                else fileQueue.push(idx);
+            });
+            renderQueue();
+            pump();
+
+        });
+
+        // ================= 4. 目录树 =================
+        async function loadTree() {
+            const box = document.getElementById('treeBox');
+            box.innerHTML = '<div class="empty-tip">加载中...</div>';
+            try {
+                const res = await fetch('/api/tree?path=&depth=4', { headers: authHeaders() });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    treeDirs = data.dirs || [];
+                    renderTree();
+                } else {
+                    box.innerHTML = '<div class="empty-tip">目录树加载失败</div>';
+                }
+            } catch (e) {
+                box.innerHTML = '<div class="empty-tip" style="color:red;">目录树加载失败</div>';
+            }
+        }
+        function buildTreeModel() {
+            const root = { name: '', path: '', children: {}, order: [] };
+            treeDirs.forEach(d => {
+                const parts = d.path.split('/');
+                let node = root;
+                let acc = '';
+                for (let i = 0; i < parts.length; i++) {
+                    const p = parts[i];
+                    acc = acc ? acc + '/' + p : p;
+                    if (!node.children[p]) {
+                        node.children[p] = { name: p, path: acc,
+                                             has_children: d.has_children, children: {}, order: [] };
+                        node.order.push(p);
+                    }
+                    node = node.children[p];
+                }
+            });
+            return root;
+        }
+        function renderTree() {
+            const box = document.getElementById('treeBox');
+            const root = buildTreeModel();
+            let html = '<div class="tree-row' + (currentPath === '' ? ' active' : '') +
+                       '" style="padding-left:6px"><span class="tree-label" onclick="navTo(\'\')">📁 全部文件</span></div>';
+            html += renderTreeChildren(root, 0);
+            box.innerHTML = html;
+        }
+        function renderTreeChildren(node, depth) {
+            if (!node.order.length) return '';
+            let html = '<ul class="tree-ul">';
+            node.order.forEach(name => {
+                const c = node.children[name];
+                const expandable = c.order.length > 0 || c.has_children;
+                const isOpen = !!expandedNodes[c.path];
+                const active = (c.path === currentPath) ? ' active' : '';
+                html += '<li class="tree-li">';
+                html += '<div class="tree-row' + active + '" style="padding-left:' + (depth * 14 + 8) + 'px">';
+                if (expandable) {
+                    html += '<span class="tree-toggle" onclick="toggleNode(\'' + escAttr(c.path) + '\', event)">' + (isOpen ? '▾' : '▸') + '</span>';
+                } else {
+                    html += '<span class="tree-toggle"></span>';
+                }
+                html += '<span class="tree-label" onclick="navTo(\'' + escAttr(c.path) + '\')">📁 ' + escapeHtml(c.name) + '</span>';
+                html += '</div>';
+                if (isOpen) html += renderTreeChildren(c, depth + 1);
+                html += '</li>';
+            });
+            html += '</ul>';
+            return html;
+        }
+        function toggleNode(path, ev) {
+            ev.stopPropagation();
+            if (expandedNodes[path]) delete expandedNodes[path];
+            else expandedNodes[path] = true;
+            renderTree();
+        }
+        function navTo(path) {
+            currentPath = path;
+            currentPage = 1;
+            expandAncestors(path);
+            renderTree();
+            renderBreadcrumb();
+            loadFileList();
+        }
+        function expandAncestors(path) {
+            if (!path) { expandedNodes[''] = true; return; }
+            const parts = path.split('/');
+            let acc = '';
+            for (let i = 0; i < parts.length; i++) {
+                acc = acc ? acc + '/' + parts[i] : parts[i];
+                expandedNodes[acc] = true;
+            }
+        }
+        function renderBreadcrumb() {
+            const el = document.getElementById('breadcrumb');
+            if (!currentPath) {
+                el.innerHTML = '<span class="crumb" onclick="navTo(\'\')">全部文件</span>';
+                return;
+            }
+            const parts = currentPath.split('/');
+            let acc = '';
+            let html = '<span class="crumb" onclick="navTo(\'\')">全部文件</span>';
+            parts.forEach(p => {
+                acc = acc ? acc + '/' + p : p;
+                html += '<span class="sep">/</span><span class="crumb" onclick="navTo(\'' + escAttr(acc) + '\')">' + escapeHtml(p) + '</span>';
+            });
+            el.innerHTML = html;
+        }
+        function escAttr(s) {
+            // 用于「双引号属性里、JS 单引号字符串中」的值：既要防 HTML 属性截断（& < > "），
+            // 也要防 JS 字符串逃逸（\ '）。旧实现只处理 \ 和 '，值里含 " 即可闭合属性注入事件。
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'");
+        }
+
+        // ================= 5. 类型下拉 =================
+        async function loadTypes() {
+            const sel = document.getElementById('typeFilter');
+            try {
+                const res = await fetch('/api/types', { headers: authHeaders() });
+                const data = await res.json();
+                const types = (data.status === 'success' && data.types) ? data.types : TYPE_FALLBACK;
+                let html = '<option value="">全部类型</option>';
+                types.forEach(t => { html += '<option value="' + t + '">' + typeLabel(t) + '</option>'; });
+                sel.innerHTML = html;
+            } catch (e) {
+                let html = '<option value="">全部类型</option>';
+                TYPE_FALLBACK.forEach(t => { html += '<option value="' + t + '">' + typeLabel(t) + '</option>'; });
+                sel.innerHTML = html;
+            }
+        }
+        const TYPE_FALLBACK = ["dir","archive","jar","excel","doc","image","log","text","binary"];
+        function typeLabel(t) {
+            const m = {dir:'目录',archive:'压缩包',jar:'JAR/WAR',excel:'表格',doc:'文档',image:'图片',log:'日志',text:'文本',binary:'其它'};
+            return m[t] || t;
+        }
+        function typeIcon(t) {
+            const m = {dir:'📁',archive:'🗜️',jar:'📦',excel:'📊',doc:'📄',image:'🖼️',log:'📜',text:'📝',binary:'⚙️'};
+            return m[t] || '📄';
+        }
+
+        // ================= 6. 文件列表（服务端分页/筛选/排序） =================
+        function fmtSize(s) {
+            if (s < 1024) return s + ' B';
+            if (s < 1024 * 1024) return (s / 1024).toFixed(1) + ' KB';
+            return (s / 1024 / 1024).toFixed(2) + ' MB';
+        }
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        let searchTimer = null;
+        document.getElementById('searchInput').addEventListener('input', function() {
+            currentQ = this.value.trim();
+            currentPage = 1;
+            if (searchTimer) clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadFileList, 300);
+        });
+        function onTypeChange() {
+            currentType = document.getElementById('typeFilter').value;
+            currentPage = 1;
+            loadFileList();
+        }
+        function toEpoch(value) {
+            if (!value) return 0;
+            const t = Date.parse(value);
+            return isNaN(t) ? 0 : Math.floor(t / 1000);
+        }
+        function onTimeChange() {
+            currentTimeFrom = toEpoch(document.getElementById('timeFrom').value);
+            currentTimeTo = toEpoch(document.getElementById('timeTo').value);
+            currentPage = 1;
+            loadFileList();
+        }
+        function clearTime() {
+            document.getElementById('timeFrom').value = '';
+            document.getElementById('timeTo').value = '';
+            currentTimeFrom = 0; currentTimeTo = 0;
+            currentPage = 1;
+            loadFileList();
+        }
+
+        async function loadFileList() {
+            const container = document.getElementById('fileListContent');
+            container.innerHTML = '<div class="empty-tip">加载中...</div>';
+            try {
+                const qs = ['path=' + encodeURIComponent(currentPath)];
+                if (currentQ) qs.push('q=' + encodeURIComponent(currentQ));
+                if (currentType) qs.push('type=' + encodeURIComponent(currentType));
+                if (currentSort) qs.push('sort=' + encodeURIComponent(currentSort) + '&order=' + currentOrder);
+                qs.push('page=' + currentPage + '&size=' + currentSize);
+                if (currentTimeFrom) qs.push('time_from=' + currentTimeFrom);
+                if (currentTimeTo) qs.push('time_to=' + currentTimeTo);
+                const res = await fetch('/api/list?' + qs.join('&'), { headers: authHeaders() });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (data.pages !== undefined) {
+                        renderFileListPaged(data);
+                    } else {
+                        // 旧结构兼容（未带结构化参数时）
+                        fileListCache = data.files || [];
+                        renderLegacyList(fileListCache);
+                    }
+                } else {
+                    container.innerHTML = '<div class="empty-tip">暂无文件</div>';
+                    document.getElementById('batchBar').style.display = 'none';
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="empty-tip" style="color:red;">获取列表失败</div>';
+            }
+        }
+
+        function renderFileListPaged(data) {
+            const container = document.getElementById('fileListContent');
+            const files = data.files || [];
+            if (!files.length) {
+                container.innerHTML = '<div class="empty-tip">该目录暂无文件</div>';
+                document.getElementById('batchBar').style.display = 'none';
+                return;
+            }
+            const arrow = field => (currentSort === field ? (currentOrder === 'asc' ? ' ▲' : ' ▼') : '');
+            let html = '<table class="file-table"><thead><tr>' +
+                '<th class="cb"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>' +
+                '<th class="sortable" onclick="sortBy(\'name\')">文件名 (含路径)' + arrow('name') + '</th>' +
+                '<th class="sortable" onclick="sortBy(\'size\')">大小' + arrow('size') + '</th>' +
+                '<th class="sortable" onclick="sortBy(\'mtime\')">修改时间' + arrow('mtime') + '</th>' +
+                '<th class="sortable" onclick="sortBy(\'type\')">类型' + arrow('type') + '</th>' +
+                '<th>操作</th></tr></thead><tbody>';
+            files.forEach(f => {
+                const enc = encodeURIComponent(f.name);
+                html += '<tr><td class="cb"><input type="checkbox" class="row-check" value="' + enc + '" onchange="updateBatchBar()"></td>' +
+                    '<td>' + typeIcon(f.type) + ' ' + escapeHtml(f.name) + '</td>' +
+                    '<td>' + fmtSize(f.size) + '</td>' +
+                    '<td>' + escapeHtml(f.mtime) + '</td>' +
+                    '<td>' + escapeHtml(f.type) + '</td>' +
+                    '<td class="op"><a onclick="downloadFile(\'' + enc + '\')">下载</a>' +
+                    '<a class="del" onclick="deleteFile(\'' + enc + '\', \'' + escAttr(f.name) + '\')">删除</a></td></tr>';
+            });
+            html += '</tbody></table>';
+
+            // 分页控件
+            html += '<div class="pager">';
+            html += '<button class="btn btn-secondary" onclick="gotoPage(' + (data.page - 1) + ')"' + ((data.page <= 1) ? ' disabled' : '') + '>上一页</button>';
+            html += '<span class="pg-info">第 ' + data.page + ' / ' + data.pages + ' 页 · 共 ' + data.total + ' 项</span>';
+            html += '<button class="btn btn-secondary" onclick="gotoPage(' + (data.page + 1) + ')"' + ((data.page >= data.pages) ? ' disabled' : '') + '>下一页</button>';
+            html += '<span class="pg-jump">跳至 <input type="number" id="pgInput" min="1" max="' + data.pages + '" value="' + data.page + '"> 页 <button class="btn btn-secondary" onclick="jumpPage()">前往</button></span>';
+            html += '<span class="pg-size">每页 <select id="pgSize" onchange="changeSize()">' +
+                [10, 20, 50, 100, 200, 500].map(s => '<option value="' + s + '"' + (s === data.size ? ' selected' : '') + '>' + s + '</option>').join('') +
+                '</select> 条</span>';
+            html += '</div>';
+            container.innerHTML = html;
+            updateBatchBar();
+        }
+
+        function renderLegacyList(files) {
+            const container = document.getElementById('fileListContent');
+            if (!files.length) {
+                container.innerHTML = '<div class="empty-tip">暂无文件</div>';
+                document.getElementById('batchBar').style.display = 'none';
+                return;
+            }
+            let html = '<table class="file-table"><thead><tr>' +
+                '<th class="cb"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>' +
+                '<th>文件名 (含路径)</th><th>大小</th><th>修改时间</th><th>操作</th></tr></thead><tbody>';
+            files.forEach(f => {
+                const enc = encodeURIComponent(f.name);
+                html += '<tr><td class="cb"><input type="checkbox" class="row-check" value="' + enc + '" onchange="updateBatchBar()"></td>' +
+                    '<td>' + escapeHtml(f.name) + '</td><td>' + fmtSize(f.size) + '</td><td>' + f.mtime + '</td>' +
+                    '<td class="op"><a onclick="downloadFile(\'' + enc + '\')">下载</a>' +
+                    '<a class="del" onclick="deleteFile(\'' + enc + '\', \'' + escAttr(f.name) + '\')">删除</a></td></tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            updateBatchBar();
+        }
+
+        function sortBy(field) {
+            if (currentSort === field) {
+                currentOrder = (currentOrder === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSort = field;
+                currentOrder = 'asc';
+            }
+            currentPage = 1;
+            loadFileList();
+        }
+        function gotoPage(p) {
+            if (p < 1) p = 1;
+            currentPage = p;
+            loadFileList();
+        }
+        function jumpPage() {
+            const inp = document.getElementById('pgInput');
+            let p = parseInt(inp.value, 10);
+            if (isNaN(p) || p < 1) p = 1;
+            currentPage = p;
+            loadFileList();
+        }
+        function changeSize() {
+            const sel = document.getElementById('pgSize');
+            currentSize = parseInt(sel.value, 10) || 50;
+            currentPage = 1;
+            loadFileList();
+        }
+
+        // ================= 批量操作 =================
+        function selectedPaths() {
+            return Array.from(document.querySelectorAll('.row-check:checked')).map(cb => decodeURIComponent(cb.value));
+        }
+        function updateBatchBar() {
+            const bar = document.getElementById('batchBar');
+            const n = selectedPaths().length;
+            document.getElementById('batchCount').textContent = n;
+            bar.style.display = n ? 'flex' : 'none';
+            const all = document.getElementById('checkAll');
+            if (all) all.checked = !!document.querySelectorAll('.row-check').length && n === document.querySelectorAll('.row-check').length;
+        }
+        function toggleAll(cb) {
+            document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+            updateBatchBar();
+        }
+        function clearSelection() {
+            document.querySelectorAll('.row-check').forEach(c => c.checked = false);
+            updateBatchBar();
+        }
+        async function batchDelete() {
+            const paths = selectedPaths();
+            if (!paths.length) return;
+            if (!confirm('确定删除选中的 ' + paths.length + ' 项吗？')) return;
+            try {
+                const res = await fetch('/api/batch/delete', {
+                    method: 'POST',
+                    headers: Object.assign({'Content-Type': 'application/json'}, authHeaders()),
+                    body: JSON.stringify({ paths })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const failedN = (data.failed || []).length;
+                    alert('批量删除完成：成功 ' + (data.success || []).length + ' 个' + (failedN ? '，失败 ' + failedN + ' 个' : ''));
+                    loadFileList();
+                    loadTree();
+                } else {
+                    alert('删除失败：' + (data.message || '未知错误'));
+                }
+            } catch (e) {
+                alert('批量删除请求失败：' + e.message);
+            }
+        }
+        function batchDownload() {
+            const paths = selectedPaths();
+            if (!paths.length) return;
+            const url = '/api/batch/download?' + paths.map(p => 'paths=' + encodeURIComponent(p)).join('&');
+            if (token) {
+                fetch(url, { headers: authHeaders() }).then(r => {
+                    if (!r.ok) { alert('批量下载失败 (HTTP ' + r.status + ')'); return; }
+                    return r.blob().then(b => {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(b);
+                        a.download = 'batch_' + new Date().toISOString().replace(/[:.]/g, '').slice(0, 14) + '.zip';
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                    });
+                }).catch(e => alert('批量下载失败：' + e.message));
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        // ================= 磁盘容量监控 =================
+        async function loadDiskInfo() {
+            try {
+                // 带令牌取状态：未授权时服务端只回基础字段（不泄露目录/磁盘），
+                // 登录后（token 非空）才能拿到磁盘容量用于展示
+                const res = await fetch('/api/status', { headers: authHeaders() });
+                const data = await res.json();
+                if (data.status !== 'success') return;
+                const pct = Math.min(100, Math.max(0, Number(data.disk_pct) || 0));
+                document.getElementById('diskBox').style.display = 'block';
+                document.getElementById('diskText').textContent =
+                    '总 ' + fmtSize(data.disk_total) + ' · 已用 ' + fmtSize(data.disk_used) + ' · 可用 ' + fmtSize(data.disk_free) + ' · ' + pct + '%';
+                const fill = document.getElementById('diskFill');
+                fill.style.width = pct + '%';
+                fill.className = 'di-fill' + (pct >= 90 ? ' danger' : pct >= 75 ? ' warn' : '');
+                document.getElementById('diskTip').textContent =
+                    '上传目录: ' + data.upload_dir + ' · 已存 ' + data.file_count + ' 个文件';
+            } catch (e) {}
+        }
+
+        function downloadFile(enc) {
+            const url = '/api/download?path=' + enc;
+            if (token) {
+                fetch(url, { headers: authHeaders() }).then(r => {
+                    if (!r.ok) { alert('下载失败'); return; }
+                    return r.blob().then(b => {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(b);
+                        a.download = decodeURIComponent(enc).split('/').pop();
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                    });
+                });
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        async function deleteFile(enc, name) {
+            if (!confirm('确定删除文件 "' + name + '" 吗？')) return;
+            const res = await fetch('/api/file?path=' + enc, { method: 'DELETE', headers: authHeaders() });
+            const data = await res.json();
+            alert(data.message || (data.status === 'success' ? '删除成功' : '删除失败'));
+            loadFileList();
+            loadTree();
+        }
+
+        // ================= 初始化 =================
+        (async function init() {
+            const loggedIn = await tryAutoLogin();
+            if (window.needLogin && !loggedIn) showLogin();
+            else afterLogin();
+        })();
+    </script>
+</body>
+</html>

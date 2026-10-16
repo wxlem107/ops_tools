@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>发布中心 v{{version}}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+         background: #eef1f6; color: #24292f; font-size: 14px; }
+  header { background: linear-gradient(90deg, #16233a 0%, #24466e 60%, #2f6fce 100%);
+           color: #fff; padding: 12px 22px; display: flex;
+           align-items: center; justify-content: space-between;
+           box-shadow: 0 2px 8px rgba(22,35,58,.25); }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; letter-spacing: .5px; }
+  header .ver { font-size: 12px; opacity: .75; margin-left: 10px; background: rgba(255,255,255,.14);
+                padding: 2px 9px; border-radius: 10px; }
+  .btn { cursor: pointer; border: none; border-radius: 6px; padding: 7px 14px;
+         background: #2f7be4; color: #fff; font-size: 13px; transition: all .15s; }
+  .btn:hover { background: #2565c4; box-shadow: 0 2px 6px rgba(47,123,228,.35); }
+  .btn.gray { background: #e6e9f0; color: #454f5e; }
+  .btn.gray:hover { background: #d7dce6; box-shadow: none; }
+  .btn.danger { background: #e05252; }
+  .btn.danger:hover { background: #c73e3e; box-shadow: 0 2px 6px rgba(224,82,82,.3); }
+  .btn.small { padding: 4px 10px; font-size: 12px; border-radius: 5px; }
+  .layout { display: flex; height: calc(100vh - 47px); }
+  .left { width: 380px; border-right: 1px solid #e1e5ee; overflow-y: auto; padding: 14px; background: #f7f9fc; }
+  .right { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .card { border: 1px solid #e4e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;
+          background: #fff; box-shadow: 0 1px 3px rgba(30,45,70,.06); transition: box-shadow .15s; }
+  .card:hover { box-shadow: 0 3px 10px rgba(30,45,70,.12); }
+  .card h3 { margin: 0 0 8px; font-size: 14px; }
+  .muted { color: #7d8799; font-size: 12px; }
+  .sec-title { font-weight: 600; margin: 18px 0 8px; color: #1d2b45; display: flex; align-items: center; }
+  .sec-title::before { content: ''; width: 3px; height: 14px; background: #2f7be4;
+                       border-radius: 2px; margin-right: 7px; }
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+  .t-pending { background: #edf0f5; color: #5a6478; }
+  .t-running { background: #fff5e0; color: #b8860b; }
+  .t-success { background: #e4f6eb; color: #218a52; }
+  .t-failed { background: #fdeaea; color: #c0392b; }
+  .t-rolled_back { background: #fdeede; color: #c87f0a; }
+  .t-canceled { background: #edf0f5; color: #8a94a6; }
+  .chip { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 12px;
+          background: #eef3fb; color: #2b5ea7; margin: 1px 3px 1px 0; font-family: Consolas, monospace; }
+  input, select, textarea { width: 100%; padding: 7px 9px; border: 1px solid #ccd4e0;
+         border-radius: 6px; font-size: 13px; margin-bottom: 6px; font-family: inherit;
+         background: #fff; transition: border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #2f7be4;
+         box-shadow: 0 0 0 2px rgba(47,123,228,.15); }
+  label { font-size: 12px; color: #55607a; display: block; margin: 6px 0 3px; }
+  .step { border-left: 3px solid #d7dce6; padding: 8px 10px; margin: 7px 0; background: #fafbfd;
+          border-radius: 0 8px 8px 0; }
+  .step.success { border-color: #2e9e63; background: #f4fbf7; }
+  .step.failed { border-color: #e05252; background: #fdf6f6; }
+  .step.running { border-color: #e0a52e; background: #fffaf0; }
+  .step .log { white-space: pre-wrap; font-family: Consolas, monospace; font-size: 12px;
+               background: #1b2432; color: #cfe0f2; padding: 8px 10px; border-radius: 6px;
+               max-height: 180px; overflow: auto; margin-top: 5px; }
+  .modal { position: fixed; inset: 0; background: rgba(15,25,45,.45); display: none;
+           align-items: center; justify-content: center; z-index: 50; }
+  .modal.show { display: flex; }
+  .modal .box { background: #fff; width: 540px; max-width: 94vw; border-radius: 12px;
+                padding: 20px 22px; max-height: 88vh; overflow: auto;
+                box-shadow: 0 12px 40px rgba(15,25,45,.3); }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .login { max-width: 340px; margin: 12vh auto; }
+  #order-detail { position: sticky; top: -16px; z-index: 5; margin-top: 16px; }
+
+  /* --- 制品包上传：拖拽区 / 队列 / 进度 --- */
+  .up-zone { border: 2px dashed #b9c6da; border-radius: 10px; padding: 16px 14px; text-align: center;
+             background: #f8fbff; transition: all .15s; cursor: pointer; }
+  .up-zone:hover { border-color: #7fa9e0; background: #f2f8ff; }
+  .up-zone.over { border-color: #2f7be4; background: #e8f2ff; box-shadow: inset 0 0 0 1px #2f7be4; }
+  .up-zone .big { font-size: 13px; color: #33415c; margin-bottom: 6px; }
+  .up-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+  .up-opts label { margin: 0; display: inline-flex; align-items: center; gap: 4px; }
+  .up-opts input[type=checkbox] { width: auto; margin: 0; }
+  .up-bar { height: 8px; background: #e6ebf3; border-radius: 5px; overflow: hidden; margin: 10px 0 4px; }
+  .up-bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#2f7be4,#4aa3f0);
+                transition: width .2s; }
+  .up-list { max-height: 230px; overflow: auto; border: 1px solid #e4e8f0; border-radius: 8px; margin-top: 6px; }
+  .up-item { display: flex; align-items: center; gap: 8px; padding: 5px 9px; font-size: 12px;
+             border-bottom: 1px solid #f0f3f8; }
+  .up-item:last-child { border-bottom: none; }
+  .up-item .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .up-item .st { flex: 0 0 auto; font-size: 11px; }
+  .up-item.ok .st { color: #218a52; }
+  .up-item.fail .st { color: #c0392b; }
+  .up-item.dup .st { color: #b8860b; }
+  .up-item .sz { flex: 0 0 auto; color: #8a94a6; }
+  /* --- 发布单：制品包多选 --- */
+  .pkg-picker { max-height: 200px; overflow: auto; border: 1px solid #e4e8f0; border-radius: 8px; padding: 4px 8px; }
+  .pkg-picker label { display: flex; align-items: center; gap: 7px; margin: 0; padding: 4px 0;
+                      font-size: 13px; color: #24292f; cursor: pointer; }
+  .pkg-picker label:hover { background: #f5f8fd; }
+  .pkg-picker input[type=checkbox] { width: auto; margin: 0; flex: 0 0 auto; }
+  .pkg-picker .meta { color: #8a94a6; font-size: 11px; }
+  .picker-bar { display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+  .picker-bar input[type=text] { margin: 0; flex: 1 1 140px; }
+
+  /* --- 发布单：实时执行：总进度条 --- */
+  .ord-bar { height: 8px; background: #e6ebf3; border-radius: 5px; overflow: hidden; margin: 10px 0 5px; }
+  .ord-bar > div { height: 100%; width: 0; border-radius: 5px;
+                   background: linear-gradient(90deg, #2f7be4, #4aa3f0); transition: width .25s ease; }
+  #ord-prog-text { margin-bottom: 2px; }
+
+  /* --- 发布单：步骤流水线 --- */
+  .pipeline { margin: 4px 0 2px; }
+  .pipeline .step { cursor: pointer; transition: box-shadow .15s, background .15s; }
+  .pipeline .step:hover { box-shadow: 0 1px 4px rgba(30,45,70,.12); }
+  .pipeline .step.active { box-shadow: inset 0 0 0 1px #2f7be4; }
+  .pipeline .step .step-el { color: #8a94a6; font-size: 11px; margin-left: 6px; }
+  .pipeline .step .step-msg { display: block; color: #6b7688; font-size: 12px; margin-top: 3px; }
+
+  /* --- 发布单：脚本输出控制台 --- */
+  .ord-console { margin-top: 12px; border: 1px solid #d7dce6; border-radius: 8px; overflow: hidden;
+                 background: #fff; }
+  .ord-console-h { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+                   border-bottom: 1px solid #d7dce6; background: #f4f7fc; font-size: 13px; font-weight: 600;
+                   color: #1d2b45; }
+  .ord-console-h .muted { flex: 1; font-weight: 400; overflow: hidden; text-overflow: ellipsis;
+                          white-space: nowrap; }
+  .ord-console-h .btn.small { flex: 0 0 auto; }
+  .ord-console-body { font-family: Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.55;
+                      white-space: pre-wrap; word-break: break-all; background: #1b2432; color: #cfe0f2;
+                      padding: 9px 11px; height: 260px; overflow: auto; }
+  .ord-console-body .muted { color: #7d8ba0; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>发布中心<span class="ver">v{{version}}</span></h1></div>
+  <div id="hdr-user" class="muted" style="color:#cfd8e3"></div>
+</header>
+
+<!-- 登录 -->
+<div id="login" class="login card" style="display:none">
+  <h3>登录发布中心</h3>
+  <label>用户名</label><input id="lg-user" value="admin">
+  <label>口令</label><input id="lg-pass" type="password">
+  <button class="btn" onclick="doLogin()">登录</button>
+  <div id="lg-msg" class="muted" style="margin-top:8px"></div>
+</div>
+
+<!-- 主界面 -->
+<div id="main" class="layout" style="display:none">
+  <div class="left">
+    <div class="sec-title">应用定义</div>
+    <div id="app-list"></div>
+    <button class="btn small" onclick="showApp()">+ 新增应用</button>
+    <div class="sec-title">制品包</div>
+    <div id="pkg-list"></div>
+    <button class="btn small gray" onclick="uploadPkg()">+ 上传制品包（拖拽 / 多选 / 整目录）</button>
+    <div class="sec-title">目标服务器</div>
+    <div id="srv-list"></div>
+    <button class="btn small" onclick="showServer()">+ 新增服务器</button>
+  </div>
+  <div class="right">
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn" onclick="loadOrders()">刷新发布单</button>
+      <button class="btn" onclick="showOrder()">+ 创建发布单</button>
+    </div>
+    <div id="order-detail"></div>
+    <div id="order-list"></div>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div id="modal" class="modal"><div class="box" id="modal-box"></div></div>
+
+<script>
+var TOKEN = localStorage.getItem('rc_token') || '';
+var STATE_ZH = { pending: '待执行', running: '执行中', success: '成功', failed: '失败',
+                 rolled_back: '已回滚', canceled: '已取消' };
+
+function authHeaders(extra) {
+  var h = extra || {};
+  if (TOKEN) h['X-Auth-Token'] = TOKEN;
+  return h;
+}
+function api(method, url, body) {
+  var opt = { method: method, headers: authHeaders() };
+  if (body !== undefined) {
+    opt.headers['Content-Type'] = 'application/json';
+    opt.body = JSON.stringify(body);
+  }
+  return fetch(url, opt).then(function (r) {
+    if (r.status === 401) { showLogin(); throw new Error('未登录'); }
+    return r.json();
+  });
+}
+function stateTag(s) {
+  return '<span class="tag t-' + esc(s || 'pending') + '">' + esc(STATE_ZH[s] || s || '待执行') + '</span>';
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+  return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); }
+// 用于「双引号属性里、JS 单引号字符串中」的数据（如 onclick="editApp('…')"）：
+// 先做 HTML 转义（& < > "），再做 JS 字符串转义（\ '）。只做 HTML 转义时，
+// &#39; 会在属性解析阶段被还原成 '，从而逃出 JS 字符串造成注入。
+function escJs(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+function v(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+
+function showLogin() {
+  TOKEN = ''; localStorage.removeItem('rc_token');
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('login').style.display = 'block';
+}
+function doLogin() {
+  fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: v('lg-user'), password: v('lg-pass') }) })
+    .then(function (r) { return r.json(); }).then(function (d) {
+      if (d.status === 'success') {
+        TOKEN = d.token; localStorage.setItem('rc_token', TOKEN);
+        document.getElementById('login').style.display = 'none';
+        boot();
+      } else document.getElementById('lg-msg').textContent = d.message || '登录失败';
+    });
+}
+function logout() {
+  api('POST', '/api/logout').then(function () { showLogin(); });
+}
+function me() {
+  return fetch('/api/me', { headers: authHeaders() }).then(function (r) { return r.json(); });
+}
+
+/* ---------------- 左侧：应用 / 制品包 / 服务器 ---------------- */
+function loadApps() {
+  api('GET', '/api/apps').then(function (d) {
+    var h = '';
+    (d.apps || []).forEach(function (a) {
+      var stepsInfo = (a.steps && a.steps.length)
+        ? ('自定义步骤链: ' + a.steps.length + ' 步（' + a.steps.map(function (s) { return esc(s.name); }).join('→') + '）')
+        : '默认六步链';
+      var pdefs = a.param_defs || [];
+      var paramInfo = pdefs.length
+        ? ('发布参数: ' + pdefs.map(function (p) {
+            return '<span class="chip">' + esc(p.key) + (p.required ? '*' : '') + '</span>'; }).join(''))
+        : '发布参数: 无';
+      var varNames = Object.keys(a.vars || {});
+      h += '<div class="card"><b>' + esc(a.name) + '</b> <span class="muted">' + esc(a.biz) + '</span>'
+        + '<div class="muted">目标: ' + esc(a.target_dir) + '<br>包名: ' + esc(a.package)
+        + '<br>' + stepsInfo
+        + '<br>' + paramInfo
+        + (varNames.length ? '<br>变量: ' + varNames.map(function (k) { return '<span class="chip">' + esc(k) + '</span>'; }).join('') : '')
+        + '<br>备份保留: ' + a.backup_keep + ' 份 · 健康: ' + esc(a.health_type) + '</div>'
+        + '<div class="row" style="margin-top:6px">'
+        + '<button class="btn small gray" onclick="editApp(\'' + escJs(a.name) + '\')">编辑</button>'
+        + '<button class="btn small danger" onclick="delApp(\'' + escJs(a.name) + '\')">删除</button></div></div>';
+    });
+    if (!d.apps || !d.apps.length) h = '<div class="muted">暂无应用</div>';
+    document.getElementById('app-list').innerHTML = h;
+  });
+}
+function loadPkgs() {
+  api('GET', '/api/packages').then(function (d) {
+    var h = '';
+    (d.packages || []).forEach(function (p) {
+      h += '<div class="card"><b>' + esc(p.name) + '</b> <span class="muted">' + esc(p.app) + ' ' + esc(p.version) + '</span>'
+        + '<div class="muted">大小: ' + esc(fmtSize(p.size)) + ' · MD5: ' + esc((p.md5 || '').slice(0, 12)) + '…'
+        + (p.src ? '<br>来源: ' + esc(p.src) : '') + '</div>'
+        + '<button class="btn small danger" onclick="delPkg(\'' + escJs(p.name) + '\')">删除</button></div>';
+    });
+    if (!d.packages || !d.packages.length) h = '<div class="muted">暂无制品包</div>';
+    document.getElementById('pkg-list').innerHTML = h;
+  });
+}
+function loadServers() {
+  api('GET', '/api/servers').then(function (d) {
+    var h = '';
+    (d.servers || []).forEach(function (s) {
+      h += '<div class="card"><b>' + esc(s.name) + '</b> <span class="muted">' + esc(s.host) + '</span>'
+        + '<div class="muted">上传:' + s.upload_port + ' · 命令:' + s.shell_port + ' · 目录:' + esc(s.upload_dir) + '</div>'
+        + '<div class="row"><button class="btn small gray" onclick="editServer(\'' + escJs(s.name) + '\')">编辑</button>'
+        + '<button class="btn small danger" onclick="delServer(\'' + escJs(s.name) + '\')">删除</button></div></div>';
+    });
+    if (!d.servers || !d.servers.length) h = '<div class="muted">暂无服务器</div>';
+    document.getElementById('srv-list').innerHTML = h;
+  });
+}
+
+/* ---------------- 右侧：发布单 ---------------- */
+function orderPkgs(o) {
+  var list = (o && o.packages && o.packages.length) ? o.packages : (o && o.package ? [o.package] : []);
+  return list;
+}
+function pkgChips(o) {
+  return orderPkgs(o).map(function (n) { return '<span class="chip">' + esc(n) + '</span>'; }).join('');
+}
+
+function loadOrders() {
+  api('GET', '/api/orders?limit=50').then(function (d) {
+    var h = '<div class="sec-title">发布单列表</div>';
+    (d.orders || []).forEach(function (o) {
+      var n = orderPkgs(o).length;
+      h += '<div class="card" style="cursor:pointer" onclick="showOrderDetail(\'' + escJs(o.id) + '\')">'
+        + '<b>' + esc(o.app) + '</b> ' + stateTag(o.state) + ' <span class="muted">' + esc(o.version)
+        + ' · 包 ' + n + ' 个 · ' + (o.servers || []).join(',') + ' · ' + (o.strategy === 'parallel' ? '并行' : '串行')
+        + ' · ' + esc(o.user || '') + '</span>'
+        + '<div style="margin-top:4px">' + pkgChips(o) + '</div></div>';
+    });
+    if (!d.orders || !d.orders.length) h += '<div class="muted">暂无发布单</div>';
+    document.getElementById('order-list').innerHTML = h;
+  });
+}
+
+/* ---------------- 发布单：实时进度 + 脚本输出控制台 ----------------
+   两件事：
+     ① 执行到哪一步  —— 步骤状态/耗时/进度条/当前步骤高亮
+     ② 脚本返回信息  —— 按步骤实时追加 stdout/stderr（执行过的可回看）
+   数据来源：/api/orders/<id>/stream（SSE）snapshot / start / step / log / done。
+   另一份等价实现在平台页 platform_console/static/app.js，改动请同步。
+------------------------------------------------------------------ */
+var STREAM = null, CUR_ORDER = null, OM = null, O_FOLLOW = null, O_FOLLOW_ON = true;
+var O_RENDERED = null, O_RECONNECT = null;
+var O_LIMIT = 200000;
+var STEP_ZH = { pending: '待执行', running: '执行中', success: '成功', failed: '失败',
+  canceled: '已取消', skipped: '已跳过', rolled_back: '已回滚' };
+
+function oKey(server, name) { return (server || '') + '|' + (name || ''); }
+function oStepZh(s) { return STEP_ZH[s] || s || '待执行'; }
+
+function stopStream() { if (STREAM) { try { STREAM.close(); } catch (e) {} STREAM = null; } }
+
+function showOrderDetail(id) {
+  stopStream();
+  CUR_ORDER = id; OM = null; O_FOLLOW = null; O_RENDERED = null; O_FOLLOW_ON = true;
+  openStream(id);          /* 先订阅：执行中的事件一个都不漏 */
+  refreshDetail();         /* 再取一份快照（流里也会推一份，谁先到都能画） */
+}
+
+function refreshDetail() {
+  if (!CUR_ORDER) return;
+  api('GET', '/api/orders/' + encodeURIComponent(CUR_ORDER)).then(function (d) {
+    if (d && d.order) setSnapshot(d.order);
+    else if (d && d.id) setSnapshot(d);
+  });
+}
+
+function openStream(id) {
+  try {
+    STREAM = new EventSource('/api/orders/' + encodeURIComponent(id)
+      + '/stream?token=' + encodeURIComponent(TOKEN));
+  } catch (e) { return; }
+  var ondata = function (ev) {
+    var m; try { m = JSON.parse(ev.data); } catch (x) { return; }
+    applyEvent(m && m.type ? m : ((m && m.data && m.data.type) ? m.data : (m && m.data) || {}));
+  };
+  STREAM.onmessage = ondata;                                  /* 直连：默认 message */
+  STREAM.addEventListener('release', ondata);                 /* 经平台透传时被命名 */
+  STREAM.addEventListener('close', function () { stopStream(); });
+  STREAM.onerror = function () {
+    if (O_RECONNECT) return;
+    O_RECONNECT = setTimeout(function () {
+      O_RECONNECT = null; if (CUR_ORDER === id) refreshDetail();
+    }, 1500);
+  };
+}
+
+/* ---------- 模型 ---------- */
+function setSnapshot(o) {
+  if (!o) return;
+  OM = { order: o, logs: {}, percent: null, cleared: null };
+  (o.server_steps || []).forEach(function (run) {
+    (run.steps || []).forEach(function (st) {
+      OM.logs[oKey(run.server, st.name)] = (st.logs || []).join('\n');
+    });
+  });
+  autoFollow();
+  paint();
+}
+
+function autoFollow() {
+  if (!OM || !O_FOLLOW_ON) return;
+  var running = null, last = null;
+  (OM.order.server_steps || []).forEach(function (r) {
+    (r.steps || []).forEach(function (st) {
+      var k = oKey(r.server, st.name);
+      if (st.logs && st.logs.length) last = k;
+      if (st.state === 'running') running = k;
+    });
+  });
+  O_FOLLOW = running || last || O_FOLLOW;
+}
+
+function appendLog(key, text) {
+  if (!OM || !text) return;
+  OM.logs[key] = (OM.logs[key] || '') + text;
+}
+
+function progress() {
+  var o = OM && OM.order;
+  if (!o) return { pct: 0, total: 0, running: null };
+  var done = 0, total = 0, running = null;
+  (o.server_steps || []).forEach(function (r) {
+    (r.steps || []).forEach(function (st, i) {
+      total++;
+      if (st.state === 'success' || st.state === 'failed') done++;
+      if (st.state === 'running') {
+        running = { server: r.server, label: st.label || st.name,
+          index: i + 1, total: (r.steps || []).length };
+      }
+    });
+  });
+  var fin = ['success', 'failed', 'rolled_back', 'canceled'].indexOf(o.state || '') >= 0;
+  var pct = (OM.percent != null) ? OM.percent : (total ? Math.round(done * 100 / total) : 0);
+  if (fin) pct = 100;
+  return { pct: pct, total: total, running: running };
+}
+
+function progressText() {
+  var o = OM && OM.order; if (!o) return '';
+  var p = progress();
+  if ((o.state || '') === 'running' && p.running) {
+    return '正在执行：' + p.running.label + '（' + p.running.server + ' · 第 '
+      + p.running.index + '/' + p.running.total + ' 步）· ' + p.pct + '%';
+  }
+  if ((o.state || '') === 'running') return '正在执行 · ' + p.pct + '%';
+  if (['success', 'failed', 'rolled_back', 'canceled'].indexOf(o.state || '') >= 0) {
+    var r = o.result || {};
+    return '执行结束：成功 ' + ((r.succeeded || []).length) + ' 台 / 失败 '
+      + ((r.failed || []).length) + ' 台';
+  }
+  return '待执行：共 ' + p.total + ' 步';
+}
+
+function stepLabel(key) {
+  var o = OM && OM.order; if (!o || !key) return key || '';
+  var out = String(key).split('|')[1] || '';
+  (o.server_steps || []).forEach(function (r) {
+    (r.steps || []).forEach(function (st) {
+      if (oKey(r.server, st.name) === key) out = st.label || st.name || out;
+    });
+  });
+  return out;
+}
+
+/* ---------- 渲染 ---------- */
+function paint() {
+  var o = OM && OM.order; if (!o) return;
+  var box = document.getElementById('order-detail'); if (!box) return;
+  var oldConsole = document.getElementById('ord-console');
+  var p = progress();
+  var h = '<div class="card"><div class="row"><div><h3>发布单 ' + esc(o.id) + ' '
+    + stateTag(o.state) + '</h3></div>'
+    + '<div style="text-align:right"><button class="btn small" onclick="runOrder(\''
+    + escJs(o.id) + '\')">执行</button> '
+    + '<button class="btn small gray" onclick="rollbackOrder(\'' + escJs(o.id) + '\')">回滚</button> '
+    + '<button class="btn small danger" onclick="cancelOrder(\'' + escJs(o.id) + '\')">取消</button></div></div>'
+    + '<div class="muted">应用: ' + esc(o.app) + ' · 版本: ' + esc(o.version)
+    + ' · 策略: ' + (o.strategy === 'parallel' ? '并行' : '串行')
+    + ' · 目标: ' + (o.servers || []).map(esc).join(', ') + '</div>'
+    + '<div style="margin-top:4px">包: ' + (pkgChips(o) || '<span class="muted">-</span>') + '</div>'
+    + (o.params && Object.keys(o.params).length
+       ? '<div style="margin-top:6px">' + Object.keys(o.params).map(function (k) {
+           return '<span class="chip">' + esc(k) + '=' + esc(o.params[k]) + '</span>'; }).join('') + '</div>'
+       : '')
+    + '<div class="ord-bar"><div style="width:' + p.pct + '%"></div></div>'
+    + '<div class="muted" id="ord-prog-text">' + esc(progressText()) + '</div></div>';
+  (o.server_steps || []).forEach(function (run) {
+    h += '<div class="card" style="margin-top:8px"><b>' + esc(run.server) + '</b> '
+      + stateTag(run.state) + '</div>';
+    h += '<div class="pipeline">';
+    (run.steps || []).forEach(function (st) {
+      var key = oKey(run.server, st.name);
+      var cls = st.state === 'success' ? 'success' : (st.state === 'failed' ? 'failed'
+        : (st.state === 'running' ? 'running' : ''));
+      h += '<div class="step ' + cls + (O_FOLLOW === key ? ' active' : '')
+        + '" data-step-key="' + esc(encodeURIComponent(key)) + '">'
+        + esc(st.label || st.name) + ' ' + stateTag(st.state)
+        + ' <span class="muted">' + esc(st.message || '') + ' · '
+        + (st.elapsed || 0) + 's</span></div>';
+    });
+    h += '</div>';
+  });
+  if (!(o.server_steps || []).length) {
+    h += '<div class="card"><span class="muted">尚未执行 —— 点「执行」后这里会实时显示每一步与脚本输出</span></div>';
+  }
+  h += '<div id="ord-console-wrap"></div>';
+  box.innerHTML = h;
+  var wrap = document.getElementById('ord-console-wrap');
+  if (wrap) {
+    if (oldConsole) wrap.appendChild(oldConsole);   /* 复用原节点：保住已显示输出与滚动位置 */
+    else wrap.innerHTML = consoleHtml();
+  }
+  updateConsoleHead();
+  if (O_FOLLOW !== O_RENDERED) renderConsole();
+}
+
+function consoleHtml() {
+  return '<div class="ord-console" id="ord-console">'
+    + '<div class="ord-console-h"><span>脚本输出</span><span class="muted" id="ord-where"></span>'
+    + '<button class="btn small gray" onclick="toggleFollow()" id="ord-follow-btn"></button>'
+    + '<button class="btn small gray" onclick="clearConsole()">清空显示</button></div>'
+    + '<div class="ord-console-body" id="ord-console-body"></div></div>';
+}
+
+function updateConsoleHead() {
+  var where = document.getElementById('ord-where'), btn = document.getElementById('ord-follow-btn');
+  if (where) where.textContent = O_FOLLOW ? (String(O_FOLLOW).split('|')[0] + ' · ' + stepLabel(O_FOLLOW)) : '（未选中步骤）';
+  if (btn) btn.textContent = O_FOLLOW_ON ? '跟随当前步骤：开' : '跟随当前步骤：关';
+}
+
+function renderConsole() {
+  O_RENDERED = O_FOLLOW;
+  var body = document.getElementById('ord-console-body'); if (!body) return;
+  var text = O_FOLLOW ? ((OM && OM.logs[O_FOLLOW]) || '') : '';
+  if (!O_FOLLOW) {
+    body.innerHTML = '<div class="muted">点上方任意步骤可回看它的脚本输出；执行中会自动跟随当前步骤</div>';
+    return;
+  }
+  if (!text || (OM && OM.cleared === O_FOLLOW)) {
+    body.innerHTML = '<div class="muted">' + (text ? '（已清空，后续输出继续显示）' : '该步骤暂无输出') + '</div>';
+    return;
+  }
+  body.textContent = text;
+  scrollConsole(true);
+}
+
+function appendConsole(text) {
+  var body = document.getElementById('ord-console-body'); if (!body || !text) return;
+  var atBottom = consoleAtBottom(body);
+  if (body.querySelector('.muted')) body.textContent = '';
+  body.textContent += text;
+  if (body.textContent.length > O_LIMIT * 1.5) {
+    body.textContent = '（已截断较早输出）\n' + body.textContent.slice(-O_LIMIT);
+  }
+  if (atBottom) scrollConsole(true);
+}
+
+function consoleAtBottom(body) {
+  try { return (body.scrollHeight - body.scrollTop - body.clientHeight) < 24; } catch (e) { return true; }
+}
+function scrollConsole(force) {
+  var body = document.getElementById('ord-console-body'); if (!body) return;
+  if (force || consoleAtBottom(body)) { try { body.scrollTop = body.scrollHeight; } catch (e) {} }
+}
+function toggleFollow() { O_FOLLOW_ON = !O_FOLLOW_ON; if (O_FOLLOW_ON) autoFollow(); updateConsoleHead(); }
+function followStep(keyEnc) {
+  O_FOLLOW_ON = false;
+  try { O_FOLLOW = decodeURIComponent(keyEnc); } catch (e) { O_FOLLOW = keyEnc; }
+  renderConsole(); updateConsoleHead();
+}
+function clearConsole() {
+  var body = document.getElementById('ord-console-body');
+  if (body) body.innerHTML = '<div class="muted">（已清空，后续输出继续显示）</div>';
+  if (OM) OM.cleared = O_FOLLOW;
+}
+
+/* ---------- 事件 ---------- */
+function applyEvent(ev) {
+  if (!ev || (ev.order_id && ev.order_id !== CUR_ORDER)) return;
+  var t = ev.type;
+  if (t === 'snapshot') { setSnapshot(ev.order); return; }
+  if (t === 'log') {
+    var key = oKey(ev.server, ev.step);
+    appendLog(key, ev.text || '');
+    if (O_FOLLOW_ON && O_FOLLOW !== key) { O_FOLLOW = key; renderConsole(); updateConsoleHead(); }
+    else if (O_FOLLOW === key) appendConsole(ev.text || '');
+    return;
+  }
+  if (t === 'start' || t === 'rollback_start') {
+    if (OM) { OM.order.state = 'running'; OM.percent = 0; }
+    paint(); return;
+  }
+  if (t === 'done') {
+    if (OM) { OM.order.state = ev.state || OM.order.state; OM.percent = 100; }
+    paint(); stopStream(); loadOrders(); return;
+  }
+  if (t === 'step') {
+    var o = OM && OM.order; if (!o) return;
+    (o.server_steps || []).forEach(function (run) {
+      if (run.server !== ev.server) return;
+      (run.steps || []).forEach(function (st) {
+        if (st.name !== ev.step) return;
+        st.state = ev.state || st.state;
+        if (ev.message) st.message = ev.message;
+        if (ev.elapsed) st.elapsed = ev.elapsed;
+        if (ev.label) st.label = ev.label;
+      });
+    });
+    if (typeof ev.percent === 'number') OM.percent = ev.percent;
+    if (ev.state === 'running' && O_FOLLOW_ON) O_FOLLOW = oKey(ev.server, ev.step);
+    paint(); return;
+  }
+  paint();
+}
+
+document.addEventListener('click', function (e) {
+  var t = e.target, node = null;
+  while (t && t !== document) {
+    if (t.getAttribute && t.getAttribute('data-step-key')) { node = t; break; }
+    t = t.parentNode;
+  }
+  if (node) followStep(node.getAttribute('data-step-key'));
+});
+
+function runOrder(id) {
+  if (!confirm('确认执行发布单 ' + id + ' ？执行后将按步骤发布到所选服务器。')) return;
+  api('POST', '/api/orders/' + encodeURIComponent(id) + '/run').then(function (d) {
+    if (d.status === 'success') { O_FOLLOW_ON = true; showOrderDetail(id); }
+    else alert(d.message || '提交失败');
+  });
+}
+function rollbackOrder(id) {
+  if (!confirm('确认回滚发布单 ' + id + ' ？将恢复最近一份备份并重启服务。')) return;
+  api('POST', '/api/orders/' + encodeURIComponent(id) + '/rollback').then(function (d) {
+    if (d.status === 'success') { O_FOLLOW_ON = true; showOrderDetail(id); }
+    else alert(d.message || '提交失败');
+  });
+}
+function cancelOrder(id) {
+  if (!confirm('确认取消发布单 ' + id + ' ？')) return;
+  api('POST', '/api/orders/' + encodeURIComponent(id) + '/cancel').then(function () { showOrderDetail(id); });
+}
+/* ---------------- 弹窗 ---------------- */
+function modal(html) { document.getElementById('modal-box').innerHTML = html; document.getElementById('modal').classList.add('show'); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+var FIELD_IDS = { name: 'f-name', biz: 'f-biz', target_dir: 'f-td', package: 'f-pkg', backup_dir: 'f-bd',
+  backup_keep: 'f-bk', release_cmd: 'f-rc', stop_cmd: 'f-sc', start_cmd: 'f-stc', health_type: 'f-ht',
+  health_target: 'f-hg', health_retry: 'f-hr', health_interval: 'f-hi', rollback_cmd: 'f-rbc' };
+
+/* ---------------- 自定义步骤链编辑 ---------------- */
+var EDIT_STEPS = [];
+var BUILTIN_CMDS = ['', '@upload', '@backup', '@stop', '@replace', '@start', '@health'];
+var BUILTIN_ZH = { '': '自定义命令', '@upload': '内置:上传包', '@backup': '内置:备份旧版',
+  '@stop': '内置:停服(app.stop_cmd)', '@replace': '内置:替换(app.release_cmd)',
+  '@start': '内置:启服(app.start_cmd)', '@health': '内置:健康检查' };
+function renderStepRows() {
+  var box = document.getElementById('step-rows');
+  if (!box) return;
+  if (!EDIT_STEPS.length) {
+    box.innerHTML = '<div class="muted">未配置 —— 使用默认六步链（上传包→备份→停服→替换→启服→健康检查）</div>';
+    return;
+  }
+  var h = '';
+  EDIT_STEPS.forEach(function (s, i) {
+    h += '<div style="border:1px solid #e3e7ee;border-radius:4px;padding:6px;margin-bottom:6px">'
+      + '<div class="row">'
+      + '<input placeholder="步骤名" value="' + esc(s.name || '') + '" oninput="EDIT_STEPS[' + i + '].name=this.value">'
+      + '<input placeholder="显示名" value="' + esc(s.label || '') + '" oninput="EDIT_STEPS[' + i + '].label=this.value">'
+      + '<select onchange="EDIT_STEPS[' + i + '].cmd=this.value;renderStepRows()">'
+      + BUILTIN_CMDS.map(function (k) {
+          return '<option value="' + k + '"' + ((s.cmd || '') === k ? ' selected' : '') + '>'
+            + esc(BUILTIN_ZH[k]) + '</option>';
+        }).join('') + '</select>'
+      + '<button class="btn small danger" style="flex:0 0 auto" onclick="EDIT_STEPS.splice(' + i + ',1);renderStepRows()">删</button>'
+      + '</div>'
+      + '<input placeholder="命令（内置动作无需填写；支持 ${package} ${version} ${target_dir} ${backup_dir} 及应用变量）" value="' + esc(s.cmd || '') + '" oninput="EDIT_STEPS[' + i + '].cmd=this.value">'
+      + '<label style="margin:2px 0 0"><input type="checkbox" style="width:auto" '
+      + (s.continue_on_fail ? 'checked ' : '') + 'onchange="EDIT_STEPS[' + i + '].continue_on_fail=this.checked"> 失败继续（软失败，不触发回滚）</label>'
+      + '</div>';
+  });
+  box.innerHTML = h;
+}
+function addStep(kind) {
+  if (EDIT_STEPS.length >= 16) { alert('最多 16 步'); return; }
+  EDIT_STEPS.push({
+    name: kind ? kind.replace('@', '') : 'step' + (EDIT_STEPS.length + 1),
+    label: kind ? BUILTIN_ZH[kind].replace('内置:', '') : '',
+    cmd: kind || '', continue_on_fail: false });
+  renderStepRows();
+}
+function loadPreset(name) {
+  api('GET', '/api/presets').then(function (d) {
+    var p = (d.presets || []).filter(function (x) { return x.name === name; })[0];
+    if (!p) { alert('模板不存在'); return; }
+    EDIT_STEPS = JSON.parse(JSON.stringify(p.steps || []));
+    EDIT_PARAMS = JSON.parse(JSON.stringify(p.param_defs || []));
+    var box = document.getElementById('f-vars');
+    if (box) box.value = Object.keys(p.vars || {}).map(function (k) {
+      return k + '=' + p.vars[k]; }).join('\n');
+    renderStepRows();
+    renderParamRows();
+  });
+}
+function appForm(a) {
+  a = a || {};
+  EDIT_STEPS = JSON.parse(JSON.stringify(a.steps || []));
+  modal('<h3>' + (a.name ? '编辑应用 ' + esc(a.name) : '新增应用') + '</h3>'
+    + '<label>应用名</label><input id="f-name" ' + (a.name ? 'disabled value="' + esc(a.name) + '"' : '') + '>'
+    + '<label>业务线</label><input id="f-biz" value="' + esc(a.biz || '') + '">'
+    + '<label>目标目录 target_dir</label><input id="f-td" value="' + esc(a.target_dir || '') + '">'
+    + '<label>包名模板 package（支持 ${version}）</label><input id="f-pkg" value="' + esc(a.package || '') + '">'
+    + '<label>备份目录 backup_dir</label><input id="f-bd" value="' + esc(a.backup_dir || '') + '">'
+    + '<label>备份保留份数</label><input id="f-bk" value="' + (a.backup_keep == null ? 5 : a.backup_keep) + '">'
+    + '<label>替换命令 release_cmd（默认链使用；可用 ${package} ${target_dir} ${version}）</label><textarea id="f-rc" rows="2">' + esc(a.release_cmd || '') + '</textarea>'
+    + '<label>停服命令 stop_cmd / 启服命令 start_cmd（默认链使用，可留空）</label><div class="row">'
+    + '<input id="f-sc" value="' + esc(a.stop_cmd || '') + '"><input id="f-stc" value="' + esc(a.start_cmd || '') + '"></div>'
+    + '<label>发布步骤链（v1.1 新增，可完全替代上面的三个命名命令）</label>'
+    + '<div id="step-rows"></div>'
+    + '<div class="row" style="flex-wrap:wrap">'
+    + '<button class="btn small gray" onclick="addStep(\'\')">+ 自定义步骤</button>'
+    + '<button class="btn small gray" onclick="addStep(\'@upload\')">+上传包</button>'
+    + '<button class="btn small gray" onclick="addStep(\'@backup\')">+备份</button>'
+    + '<button class="btn small gray" onclick="addStep(\'@stop\')">+停服</button>'
+    + '<button class="btn small gray" onclick="addStep(\'@replace\')">+替换</button>'
+    + '<button class="btn small gray" onclick="addStep(\'@start\')">+启服</button>'
+    + '<button class="btn small gray" onclick="addStep(\'@health\')">+健康检查</button></div>'
+    + '<div class="row" style="margin-top:6px">'
+    + '<button class="btn small" onclick="loadPreset(\'script_chain\')">载入脚本链模板(拉包→停服→备份→发布→启服)</button>'
+    + '<button class="btn small gray" onclick="loadPreset(\'standard\')">载入标准六步</button></div>'
+    + '<label>应用变量 vars（每行 key=value，命令里用 ${key} 引用）</label><textarea id="f-vars" rows="3" placeholder="Version_All=3.2.0&#10;NPkg=01"></textarea>'
+    + '<label>健康检查类型</label><select id="f-ht">'
+    + ['none', 'port', 'http', 'cmd'].map(function (t) {
+        return '<option value="' + t + '"' + ((a.health_type || 'none') === t ? ' selected' : '') + '>' + t + '</option>';
+      }).join('') + '</select>'
+    + '<label>健康检查目标（端口 / URL / 命令）</label><input id="f-hg" value="' + esc(a.health_target || '') + '">'
+    + '<label>重试次数 / 间隔秒</label><div class="row">'
+    + '<input id="f-hr" value="' + (a.health_retry == null ? 10 : a.health_retry) + '">'
+    + '<input id="f-hi" value="' + (a.health_interval == null ? 3 : a.health_interval) + '"></div>'
+    + '<label>回滚命令 rollback_cmd（可选，留空则直接恢复备份目录）</label><textarea id="f-rbc" rows="2">' + esc(a.rollback_cmd || '') + '</textarea>'
+    + '<div class="row" style="margin-top:8px"><button class="btn" onclick="saveApp(\'' + escJs(a.name || '') + '\')">保存</button>'
+    + '<button class="btn gray" onclick="closeModal()">取消</button></div>');
+  var vb = document.getElementById('f-vars');
+  var vals = [];
+  var vars0 = a.vars || {};
+  Object.keys(vars0).forEach(function (k) { vals.push(k + '=' + vars0[k]); });
+  vb.value = vals.join('\n');
+  renderStepRows();
+  renderParamRows();
+}
+function showApp() { appForm(null); }
+function editApp(name) {
+  api('GET', '/api/apps').then(function (d) {
+    var a = (d.apps || []).filter(function (x) { return x.name === name; })[0];
+    if (a) appForm(a);
+  });
+}
+function saveApp(origName) {
+  var vars = {};
+  v('f-vars').split('\n').forEach(function (line) {
+    line = line.trim(); if (!line) return;
+    var i = line.indexOf('='); if (i < 0) return;
+    var k = line.slice(0, i).trim(), val = line.slice(i + 1).trim();
+    if (k) vars[k] = val;
+  });
+  var steps = EDIT_STEPS.filter(function (s) { return (s.name || '').trim(); })
+    .map(function (s) { return { name: (s.name || '').trim(), label: s.label || '',
+      cmd: s.cmd || '', continue_on_fail: !!s.continue_on_fail }; });
+  var pdefs = EDIT_PARAMS.filter(function (p) { return (p.key || '').trim(); })
+    .map(function (p) { return { key: (p.key || '').trim(), label: p.label || '',
+      default: p.default || '', required: !!p.required }; });
+  var body = { name: v('f-name'), biz: v('f-biz'), target_dir: v('f-td'), package: v('f-pkg'),
+    backup_dir: v('f-bd'), backup_keep: parseInt(v('f-bk') || '5', 10),
+    release_cmd: v('f-rc'), stop_cmd: v('f-sc'), start_cmd: v('f-stc'),
+    health_type: v('f-ht'), health_target: v('f-hg'),
+    health_retry: parseInt(v('f-hr') || '10', 10), health_interval: parseFloat(v('f-hi') || '3'),
+    rollback_cmd: v('f-rbc'), steps: steps, vars: vars, param_defs: pdefs };
+  var p;
+  if (origName) p = api('PUT', '/api/apps/' + encodeURIComponent(origName), body);
+  else p = api('POST', '/api/apps', body);
+  p.then(function (d) { if (d.status === 'success') { closeModal(); loadApps(); } else alert(d.message); });
+}
+function delApp(name) { if (!confirm('确认删除应用 ' + name + ' ？')) return; api('DELETE', '/api/apps/' + encodeURIComponent(name)).then(function () { loadApps(); }); }
+function delPkg(name) { if (!confirm('确认删除制品包 ' + name + ' ？')) return; api('DELETE', '/api/packages/' + encodeURIComponent(name)).then(function () { loadPkgs(); }); }
+function delServer(name) { if (!confirm('确认删除服务器 ' + name + ' ？')) return; api('DELETE', '/api/servers/' + encodeURIComponent(name)).then(function () { loadServers(); }); }
+
+/* ---------------- 制品包上传：拖拽 / 多选 / 整目录 ---------------- */
+var UP_QUEUE = [];        // {file, src, name, size, state, pct, msg, dup}
+var UP_RUNNING = false;
+var UP_CANCEL = false;
+var UP_XHRS = [];
+var UP_CONCURRENCY = 2;   // 并发上传数：太高会互相抢带宽，反而更慢
+
+function fmtSize(n) {
+  n = Number(n) || 0;
+  if (n >= 1073741824) return (n / 1073741824).toFixed(2) + ' GB';
+  if (n >= 1048576) return (n / 1048576).toFixed(2) + ' MB';
+  if (n >= 1024) return (n / 1024).toFixed(1) + ' KB';
+  return n + ' B';
+}
+
+function uploadPkg() {
+  UP_QUEUE = []; UP_RUNNING = false; UP_CANCEL = false; UP_XHRS = [];
+  modal('<h3>上传制品包</h3>'
+    + '<label>应用（可选）</label><input id="u-app" placeholder="留空则稍后在发布单里指定">'
+    + '<label>版本（可选）</label><input id="u-ver" placeholder="如 3.2.0">'
+    + '<div class="up-zone" id="u-zone">'
+    + '  <div class="big">把 <b>文件</b> 或 <b>文件夹</b> 拖到这里</div>'
+    + '  <div class="muted">同一个来源里的文件可一次全部选中；拖入文件夹会递归上传其中的所有文件</div>'
+    + '  <div style="margin-top:10px">'
+    + '    <button class="btn small" type="button" onclick="document.getElementById(\'u-files\').click()">选择多个文件</button> '
+    + '    <button class="btn small gray" type="button" onclick="document.getElementById(\'u-dir\').click()">选择整个目录</button>'
+    + '  </div>'
+    + '  <input type="file" id="u-files" multiple style="display:none">'
+    + '  <input type="file" id="u-dir" webkitdirectory directory multiple style="display:none">'
+    + '</div>'
+    + '<div class="up-opts">'
+    + '  <label><input type="checkbox" id="u-skipdup" checked> 跳过内容相同的包（按 MD5 判重）</label>'
+    + '  <label class="muted">并发数 <select id="u-conc" style="width:70px;margin:0">'
+    + '     <option value="1">1</option><option value="2" selected>2</option>'
+    + '     <option value="3">3</option><option value="4">4</option></select></label>'
+    + '</div>'
+    + '<div class="up-bar"><i id="u-bar"></i></div>'
+    + '<div class="muted" id="u-sum">尚未选择文件</div>'
+    + '<div class="up-list" id="u-list"></div>'
+    + '<div class="row" style="margin-top:10px">'
+    + '  <button class="btn" id="u-go" onclick="startUpload()">开始上传</button>'
+    + '  <button class="btn gray" id="u-stop" onclick="cancelUpload()" style="display:none">停止</button>'
+    + '  <button class="btn gray" onclick="closeModal()">关闭</button>'
+    + '</div>');
+  var fi = document.getElementById('u-files');
+  var di = document.getElementById('u-dir');
+  fi.onchange = function () { addUploadFiles(this.files); this.value = ''; };
+  di.onchange = function () { addUploadFiles(this.files); this.value = ''; };
+  var zone = document.getElementById('u-zone');
+  zone.onclick = function (e) {
+    if (e.target.tagName === 'BUTTON') return;
+    document.getElementById('u-files').click();
+  };
+  bindDrop(zone);
+  renderQueue();
+}
+
+/* 拖拽：既支持拖文件，也支持拖文件夹（webkitGetAsEntry 递归展开） */
+function bindDrop(zone) {
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    zone.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); zone.classList.add('over'); });
+  });
+  ['dragleave', 'dragend'].forEach(function (ev) {
+    zone.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); zone.classList.remove('over'); });
+  });
+  zone.addEventListener('drop', function (e) {
+    e.preventDefault(); e.stopPropagation(); zone.classList.remove('over');
+    var dt = e.dataTransfer;
+    if (!dt) return;
+    var entries = [];
+    if (dt.items && dt.items.length && dt.items[0].webkitGetAsEntry) {
+      for (var i = 0; i < dt.items.length; i++) {
+        var it = dt.items[i];
+        if (it.kind !== 'file') continue;
+        var en = it.webkitGetAsEntry();
+        if (en) entries.push(en);
+      }
+    }
+    if (entries.length) {
+      zone.querySelector('.big').innerHTML = '正在读取文件夹…';
+      Promise.all(entries.map(function (en) { return readEntry(en, '', []); })).then(function (arrs) {
+        var out = [];
+        arrs.forEach(function (a) { out = out.concat(a); });
+        addUploadFiles(out, true);
+        renderQueue();
+      });
+    } else if (dt.files && dt.files.length) {
+      addUploadFiles(dt.files);
+    }
+  });
+}
+function readEntry(entry, prefix, out) {
+  return new Promise(function (res) {
+    if (entry.isFile) {
+      entry.file(function (f) { out.push({ file: f, src: prefix + f.name }); res(); },
+                 function () { res(); });
+    } else if (entry.isDirectory) {
+      var reader = entry.createReader();
+      var kids = [];
+      var pump = function () {
+        reader.readEntries(function (ents) {
+          if (!ents.length) {
+            var sub = entry.name + '/';
+            Promise.all(kids.map(function (k) { return readEntry(k, prefix + sub, out); }))
+              .then(function () { res(); });
+            return;
+          }
+          kids = kids.concat(Array.prototype.slice.call(ents));
+          pump();   // readEntries 每次最多返回 100 项，需要循环读完
+        }, function () { res(); });
+      };
+      pump();
+    } else { res(); }
+  });
+}
+
+function addUploadFiles(list, isObj) {
+  if (!list || !list.length) return;
+  var msg = document.getElementById('u-sum');
+  var seen = {};
+  UP_QUEUE.forEach(function (q) { seen[q.src] = true; });
+  var dupInQueue = 0, skippedDir = 0;
+  for (var i = 0; i < list.length; i++) {
+    var item = list[i];
+    var f, src;
+    if (isObj) { f = item.file; src = item.src || f.name; }
+    else {
+      f = item;
+      // webkitRelativePath 来自「选择目录」，能带上子目录层级，用于溯源展示
+      src = f.webkitRelativePath || f.name;
+    }
+    if (!f || !f.name) continue;
+    if (f.name === '.DS_Store' || f.name === 'Thumbs.db' || f.name === 'desktop.ini') { skippedDir++; continue; }
+    if (seen[src]) { dupInQueue++; continue; }
+    seen[src] = true;
+    UP_QUEUE.push({ file: f, src: src, name: f.name, size: f.size || 0,
+                    state: 'wait', pct: 0, msg: '', dup: false });
+  }
+  if (msg) {
+    var tips = [];
+    if (dupInQueue) tips.push('队列内重复 ' + dupInQueue + ' 个');
+    if (skippedDir) tips.push('忽略系统文件 ' + skippedDir + ' 个');
+    renderQueue(tips.length ? '（' + tips.join('，') + '）' : '');
+  } else {
+    renderQueue();
+  }
+}
+
+function renderQueue(tip) {
+  var box = document.getElementById('u-list');
+  var sum = document.getElementById('u-sum');
+  if (!box) return;
+  var h = '';
+  var done = 0, okN = 0, failN = 0, dupN = 0, upN = 0;
+  UP_QUEUE.forEach(function (q, i) {
+    var cls = q.state === 'ok' ? 'ok' : (q.state === 'fail' ? 'fail' : (q.dup ? 'dup' : ''));
+    var st = { wait: '等待', up: (q.pct + '%'), ok: '完成', fail: '失败', dup: '已存在(跳过)' }[q.state] || q.state;
+    h += '<div class="up-item ' + cls + '"><span class="nm" title="' + esc(q.src) + '">'
+      + (i + 1) + '. ' + esc(q.src) + (q.msg ? ' <span class="muted">(' + esc(q.msg) + ')</span>' : '')
+      + '</span><span class="sz">' + esc(fmtSize(q.size)) + '</span><span class="st">' + esc(st) + '</span></div>';
+    if (q.state === 'ok') { done++; okN++; }
+    else if (q.state === 'dup') { done++; dupN++; }
+    else if (q.state === 'fail') { done++; failN++; }
+    else if (q.state === 'up') upN++;
+  });
+  box.innerHTML = h || '<div class="up-item muted">（队列为空）</div>';
+  var pct = UP_QUEUE.length ? Math.round(done * 100 / UP_QUEUE.length) : 0;
+  var bar = document.getElementById('u-bar');
+  if (bar) bar.style.width = pct + '%';
+  if (sum) {
+    sum.textContent = UP_QUEUE.length
+      ? ('共 ' + UP_QUEUE.length + ' 个文件 · 完成 ' + done + '（新增 ' + okN
+         + '，跳过重复 ' + dupN + '，失败 ' + failN + '）· 上传中 ' + upN + (tip || ''))
+      : ('尚未选择文件' + (tip || ''));
+  }
+  var go = document.getElementById('u-go');
+  if (go) {
+    go.textContent = (done < UP_QUEUE.length && UP_RUNNING) ? '上传中…' : (done >= UP_QUEUE.length && UP_QUEUE.length ? '全部完成' : '开始上传');
+    go.disabled = UP_RUNNING || !UP_QUEUE.length || done >= UP_QUEUE.length;
+  }
+  var stop = document.getElementById('u-stop');
+  if (stop) stop.style.display = UP_RUNNING ? '' : 'none';
+}
+
+function startUpload() {
+  if (UP_RUNNING) return;
+  var todo = UP_QUEUE.filter(function (q) { return q.state === 'wait'; });
+  if (!todo.length) { alert('没有待上传的文件'); return; }
+  var c = parseInt((document.getElementById('u-conc') || {}).value || '2', 10);
+  UP_CONCURRENCY = Math.max(1, Math.min(8, c || 2));
+  UP_RUNNING = true; UP_CANCEL = false; UP_XHRS = [];
+  var idx = 0;
+  var pump = function () {
+    if (UP_CANCEL || idx >= todo.length) return Promise.resolve();
+    var item = todo[idx++];
+    return upOne(item).then(pump);
+  };
+  var workers = [];
+  for (var i = 0; i < UP_CONCURRENCY; i++) workers.push(pump());
+  Promise.all(workers).then(function () {
+    UP_RUNNING = false;
+    renderQueue();
+    loadPkgs();
+    var failed = UP_QUEUE.filter(function (q) { return q.state === 'fail'; }).length;
+    if (!failed) setTimeout(function () {
+      var main = document.getElementById('main');
+      if (main && main.style.display !== 'none') closeModal();
+    }, 600);
+  });
+}
+
+function upOne(item) {
+  return new Promise(function (resolve) {
+    if (UP_CANCEL) { resolve(); return; }
+    item.state = 'up'; item.pct = 0; renderQueue();
+    var skip = document.getElementById('u-skipdup');
+    var qs = '/api/packages/upload?filename=' + encodeURIComponent(item.name)
+      + '&app=' + encodeURIComponent(v('u-app')) + '&version=' + encodeURIComponent(v('u-ver'))
+      + '&src=' + encodeURIComponent(item.src) + '&skip_dup=' + (skip && skip.checked ? 1 : 0);
+    var xhr = new XMLHttpRequest();
+    UP_XHRS.push(xhr);
+    xhr.open('POST', qs, true);
+    if (TOKEN) xhr.setRequestHeader('X-Auth-Token', TOKEN);
+    xhr.upload.onprogress = function (e) {
+      if (e.lengthComputable) { item.pct = Math.round(e.loaded * 100 / e.total); renderQueue(); }
+    };
+    xhr.onload = function () {
+      if (xhr.status === 401) { showLogin(); item.state = 'fail'; item.msg = '未登录'; resolve(); return; }
+      var d = {};
+      try { d = JSON.parse(xhr.responseText || '{}'); } catch (x) {}
+      if (xhr.status === 200 && d.status === 'success') {
+        if (d.duplicate) { item.state = 'dup'; item.dup = true; item.msg = '已有 ' + (d.name || ''); }
+        else { item.state = 'ok'; item.pct = 100; }
+      } else {
+        item.state = 'fail'; item.msg = (d.message || ('HTTP ' + xhr.status));
+      }
+      renderQueue();
+      resolve();
+    };
+    xhr.onerror = function () { item.state = 'fail'; item.msg = '网络错误'; renderQueue(); resolve(); };
+    xhr.onabort = function () { if (item.state === 'up') item.state = 'wait'; renderQueue(); resolve(); };
+    xhr.send(item.file);
+  });
+}
+
+function cancelUpload() {
+  UP_CANCEL = true;
+  UP_XHRS.forEach(function (x) { try { x.abort(); } catch (e) {} });
+  UP_XHRS = [];
+  UP_RUNNING = false;
+  UP_QUEUE.forEach(function (q) { if (q.state === 'up') q.state = 'wait'; });
+  renderQueue();
+}
+
+var EDIT_SERVER = null;
+function serverForm(s) {
+  s = s || {};
+  modal('<h3>' + (s.name ? '编辑服务器 ' + esc(s.name) : '新增服务器') + '</h3>'
+    + '<label>名称</label><input id="s-name" ' + (s.name ? 'disabled value="' + esc(s.name) + '"' : '') + '>'
+    + '<label>主机 host</label><input id="s-host" value="' + esc(s.host || '127.0.0.1') + '">'
+    + '<label>上传端口 / 命令端口</label><div class="row"><input id="s-up" value="' + (s.upload_port || 8080) + '"><input id="s-sp" value="' + (s.shell_port || 9100) + '"></div>'
+    + '<label>上传令牌 / 命令令牌</label><div class="row"><input id="s-ut" value="' + esc(s.upload_token || '') + '"><input id="s-st" value="' + esc(s.shell_token || '') + '"></div>'
+    + '<label>远端上传目录 upload_dir</label><input id="s-ud" value="' + esc(s.upload_dir || '/opt/upload') + '">'
+    + '<div class="row" style="margin-top:8px"><button class="btn" onclick="saveServer(\'' + escJs(s.name || '') + '\')">保存</button>'
+    + '<button class="btn gray" onclick="closeModal()">取消</button></div>');
+}
+function showServer() { serverForm(null); }
+function editServer(name) {
+  api('GET', '/api/servers').then(function (d) {
+    var s = (d.servers || []).filter(function (x) { return x.name === name; })[0];
+    if (s) serverForm(s);
+  });
+}
+function saveServer(origName) {
+  var body = { name: v('s-name'), host: v('s-host'), upload_port: parseInt(v('s-up') || '8080', 10),
+    shell_port: parseInt(v('s-sp') || '9100', 10), upload_token: v('s-ut'), shell_token: v('s-st'),
+    upload_dir: v('s-ud') };
+  var p;
+  if (origName) p = api('PUT', '/api/servers/' + encodeURIComponent(origName), body);
+  else p = api('POST', '/api/servers', body);
+  p.then(function (d) { if (d.status === 'success') { closeModal(); loadServers(); } else alert(d.message); });
+}
+
+var ORDER_APPS = [];
+var ORDER_PKGS = [];
+var PKG_CHECKED = {};
+var PKG_BY_APP = true;      // 制品包列表默认只显示「属于所选应用」的包
+
+function renderOrderParams() {
+  var box = document.getElementById('o-params');
+  if (!box) return;
+  var sel = v('o-app');
+  var a = ORDER_APPS.filter(function (x) { return x.name === sel; })[0];
+  var defs = (a && a.param_defs) || [];
+  if (!defs.length) {
+    box.innerHTML = '<div class="muted">该应用未定义发布参数（可在应用编辑里添加 param_defs）</div>';
+    return;
+  }
+  var h = '';
+  defs.forEach(function (p) {
+    h += '<label>' + esc(p.label || p.key) + '（${' + esc(p.key) + '}）'
+      + (p.required ? ' <span style="color:#c0392b">*</span>' : '') + '</label>'
+      + '<input id="o-pm-' + esc(p.key) + '" value="' + esc(p.default || '') + '" '
+      + 'placeholder="' + (p.required ? '必填' : '可留空，用应用默认') + '">';
+  });
+  box.innerHTML = h;
+}
+
+/* 制品包多选：可挂多个包一起发布（主程序包 + 配置包 / 版本包 + 补丁包） */
+function visiblePkgs() {
+  var sel = v('o-app');
+  var q = ((document.getElementById('o-pkg-q') || {}).value || '').trim().toLowerCase();
+  return ORDER_PKGS.filter(function (p) {
+    if (PKG_BY_APP && sel && p.app && p.app !== sel) return false;
+    if (q && String(p.name).toLowerCase().indexOf(q) < 0
+        && String(p.app || '').toLowerCase().indexOf(q) < 0
+        && String(p.src || '').toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+}
+function renderPkgPicker() {
+  var box = document.getElementById('o-pkg');
+  if (!box) return;
+  var items = visiblePkgs();
+  var h = '';
+  items.forEach(function (p) {
+    h += '<label><input type="checkbox" value="' + esc(p.name) + '"'
+      + (PKG_CHECKED[p.name] ? ' checked' : '')
+      + ' onchange="PKG_CHECKED[this.value]=this.checked;updatePkgSum()"> '
+      + '<span>' + esc(p.name) + '</span>'
+      + '<span class="meta">' + esc(p.app || '') + ' ' + esc(p.version || '') + ' · ' + esc(fmtSize(p.size)) + '</span></label>';
+  });
+  box.innerHTML = h || ('<div class="up-item muted">' + (ORDER_PKGS.length ? '没有匹配的制品包' : '暂无制品包，请先在左侧上传') + '</div>');
+  updatePkgSum();
+}
+function updatePkgSum() {
+  var el = document.getElementById('o-pkg-sum');
+  if (!el) return;
+  var names = pickedPkgs();
+  el.innerHTML = names.length
+    ? ('已选 <b>' + names.length + '</b> 个：' + names.map(function (n) { return '<span class="chip">' + esc(n) + '</span>'; }).join(''))
+    : '<span class="muted">尚未选择制品包</span>';
+}
+function pickedPkgs() {
+  return ORDER_PKGS.filter(function (p) { return PKG_CHECKED[p.name]; })
+    .map(function (p) { return p.name; });
+}
+function pkgCheckAll(val) {
+  visiblePkgs().forEach(function (p) { PKG_CHECKED[p.name] = val; });
+  renderPkgPicker();
+}
+function onOrderAppChange() {
+  renderOrderParams();
+  var sel = v('o-app');
+  // 切应用时把「该应用自己的包」自动勾上，减少手工挑选；用户取消勾选不会被覆盖
+  var mine = ORDER_PKGS.filter(function (p) { return p.app && p.app === sel; });
+  if (PKG_BY_APP && mine.length) {
+    var anyChecked = pickedPkgs().length > 0;
+    if (!anyChecked) mine.forEach(function (p) { PKG_CHECKED[p.name] = true; });
+  }
+  renderPkgPicker();
+}
+
+function showOrder() {
+  api('GET', '/api/apps').then(function (da) {
+    api('GET', '/api/packages').then(function (dp) {
+      api('GET', '/api/servers').then(function (ds) {
+        ORDER_APPS = da.apps || [];
+        ORDER_PKGS = dp.packages || [];
+        PKG_CHECKED = {};
+        var appOpts = ORDER_APPS.map(function (a) { return '<option>' + esc(a.name) + '</option>'; }).join('');
+        var srv = (ds.servers || []).map(function (s) {
+          return '<label style="display:inline-block;margin-right:10px"><input type="checkbox" style="width:auto" value="' + esc(s.name) + '"> ' + esc(s.name) + '</label>';
+        }).join('');
+        modal('<h3>创建发布单</h3><label>应用</label><select id="o-app" onchange="onOrderAppChange()">' + appOpts + '</select>'
+          + '<label>版本</label><input id="o-ver">'
+          + '<label>制品包（可多选，会按顺序全部推到目标机）</label>'
+          + '<div class="picker-bar">'
+          + '  <input type="text" id="o-pkg-q" placeholder="按名称 / 应用 / 来源筛选" oninput="renderPkgPicker()">'
+          + '  <button class="btn small gray" type="button" onclick="pkgCheckAll(true)">全选</button>'
+          + '  <button class="btn small gray" type="button" onclick="pkgCheckAll(false)">清空</button>'
+          + '  <label style="margin:0;display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="o-only-app" checked '
+          + 'style="width:auto;margin:0" onchange="PKG_BY_APP=this.checked;renderPkgPicker()"> 只看所选应用</label>'
+          + '</div>'
+          + '<div class="pkg-picker" id="o-pkg"></div>'
+          + '<div class="muted" id="o-pkg-sum" style="margin-top:6px"></div>'
+          + '<label>策略</label><select id="o-st"><option value="serial">串行（逐台）</option><option value="parallel">并行（同时）</option></select>'
+          + '<label>目标服务器（可多选）</label><div id="o-srv">' + (srv || '<span class="muted">暂无服务器</span>') + '</div>'
+          + '<label style="margin-top:8px">发布参数（本次发布的取值，会注入所有步骤命令的 ${key}）</label><div id="o-params"></div>'
+          + '<div class="row" style="margin-top:8px"><button class="btn" onclick="saveOrder()">创建</button>'
+          + '<button class="btn gray" onclick="closeModal()">取消</button></div>');
+        PKG_BY_APP = true;
+        onOrderAppChange();
+      });
+    });
+  });
+}
+function saveOrder() {
+  var sv = []; document.querySelectorAll('#o-srv input:checked').forEach(function (c) { sv.push(c.value); });
+  var sel = v('o-app');
+  var a = ORDER_APPS.filter(function (x) { return x.name === sel; })[0];
+  var params = {};
+  var missing = [];
+  ((a && a.param_defs) || []).forEach(function (p) {
+    var val = (v('o-pm-' + p.key) || '').trim();
+    if (p.required && !val) missing.push(p.label || p.key);
+    params[p.key] = val;
+  });
+  if (missing.length) { alert('必填参数未填写: ' + missing.join(', ')); return; }
+  var pkgs = pickedPkgs();
+  if (!pkgs.length) { alert('请至少选择一个制品包'); return; }
+  if (!sv.length) { alert('请至少选择一个目标服务器'); return; }
+  var body = { app: sel, version: v('o-ver'), package: pkgs[0], packages: pkgs,
+               strategy: v('o-st'), servers: sv, params: params };
+  api('POST', '/api/orders', body).then(function (d) {
+    if (d.status === 'success') { closeModal(); loadOrders(); showOrderDetail(d.id); } else alert(d.message);
+  });
+}
+
+/* ---------------- 启动 ---------------- */
+function boot() {
+  me().then(function (d) {
+    if (d.need_login) { showLogin(); return; }
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('main').style.display = 'flex';
+    var hdr = document.getElementById('hdr-user');
+    hdr.textContent = (d.username || '') + ' / ' + (d.role_label || d.role || '');
+    var btn = document.createElement('button');
+    btn.className = 'btn small gray'; btn.textContent = '退出'; btn.style.marginLeft = '8px';
+    btn.onclick = logout; hdr.appendChild(btn);
+    loadApps(); loadPkgs(); loadServers(); loadOrders();
+  });
+}
+boot();
+</script>
+</body>
+</html>

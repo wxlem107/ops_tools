@@ -1,0 +1,8 @@
+init ok=True upload_id=5c5edbfba3894170afef8247adb014b3 total_chunks=16 chunk=16MB conc=6
+分片上传: 6.49s  39.4 MB/s  errs=0
+complete: 1.68s status=success
+落盘大小=268435456 期望=268435456
+本地磁盘顺序写: 0.21s  1197.3 MB/s
+稀疏文件并发偏移写: 9.04s  28.3 MB/s
+
+EXIT=0

@@ -1,0 +1,9 @@
+=== 256MB / 16MB 分片 / 并发 6 / 各 3 次 ===
+chunkfile rep1: init  0.14s | 上传   0.71s =  358.3 MB/s | complete  3.18s | OK | 一致
+chunkfile rep2: init  0.16s | 上传   0.61s =  421.7 MB/s | complete  9.09s | OK | 一致
+chunkfile rep3: init  0.13s | 上传   0.47s =  544.9 MB/s | complete  6.86s | OK | 一致
+offset rep1: init  1.55s | 上传   0.46s =  559.4 MB/s | complete  0.17s | OK | 一致
+offset rep2: init  1.97s | 上传   0.38s =  665.2 MB/s | complete  0.15s | OK | 一致
+offset rep3: init 10.75s | 上传   4.41s =   58.1 MB/s | complete  0.17s | OK | 一致
+
+EXIT=0

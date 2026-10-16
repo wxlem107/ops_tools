@@ -1,0 +1,22 @@
+py2 异常捕获审查（漏写 IOError 的 except 子句）
+扫描目录: opslib, tools, platform_console
+------------------------------------------------------------------------
+
+[需补 IOError] 2 处：
+  verify_upload_perf.py:107  try 首行: os.remove(target)
+      易抛 IOError 的调用: remove
+  verify_upload_perf.py:225  try 首行: os.remove(p)
+      易抛 IOError 的调用: remove
+
+[可接受] 6 处（try 体仅 os.stat/os.makedirs 等）：
+  opslib/compat.py:204  os.makedirs(path)
+  opslib/compat.py:318  st = os.stat(full)
+  opslib/server.py:53  st = os.stat(path)
+  opslib/server.py:315  st = os.stat(path)
+  opslib/store.py:113  self._mtime = os.stat(self.path).st_mtime
+  opslib/store.py:86  mtime = os.stat(self.path).st_mtime
+
+========================================================================
+需补 IOError: 2 处，可接受: 6 处 —— 未通过 ❌
+
+EXIT=1

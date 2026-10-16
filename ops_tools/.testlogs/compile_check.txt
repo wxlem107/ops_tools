@@ -1,0 +1,28 @@
+FAIL verify_integration.py
+Traceback (most recent call last):
+  File "C:\Users\Administrator\.workbuddy\binaries\python\versions\3.13.12\Lib\py_compile.py", line 144, in compile
+    code = loader.source_to_code(source_bytes, dfile or file,
+                                 _optimize=optimize)
+  File "<frozen importlib._bootstrap_external>", line 1087, in source_to_code
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "verify_integration.py", line 172
+    print('\n== 登录 / 会话 ==')        bad = httpx.post(PLAT + '/api/login', json_body={'username': 'admin',
+                                    ^^^
+SyntaxError: invalid syntax
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+    py_compile.compile(f,doraise=True); out.append('OK '+f)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\.workbuddy\binaries\python\versions\3.13.12\Lib\py_compile.py", line 150, in compile
+    raise py_exc
+py_compile.PyCompileError:   File "verify_integration.py", line 172
+    print('\n== 登录 / 会话 ==')        bad = httpx.post(PLAT + '/api/login', json_body={'username': 'admin',
+                                    ^^^
+SyntaxError: invalid syntax
+
+
+OK opslib/server.py
+OK tools/upload_server.py

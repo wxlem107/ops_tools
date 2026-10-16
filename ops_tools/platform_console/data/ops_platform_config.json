@@ -1,0 +1,30 @@
+{
+  "servers": [
+    {
+      "group": "",
+      "name": "172.19.196.130",
+      "tags": [],
+      "type": "both",
+      "host": "127.0.0.1",
+      "shell_token": "x",
+      "env": "",
+      "upload_token": "up-tok",
+      "shell_port": 18088,
+      "access_mode": "auto",
+      "upload_port": 18821,
+      "metrics_port": 8040
+    }
+  ],
+  "settings": {
+    "server_probe_interval": 30,
+    "release_url": "http://172.19.196.130:8094",
+    "access_mode": "auto",
+    "release_token": "Admin_123!",
+    "upload_concurrency": 6,
+    "release_user": "admin",
+    "release_pass": "Admin_123!",
+    "theme": "auto",
+    "metrics_interval": 10,
+    "chunk_mb": 0
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "orders": [
+    {
+      "id": "r-1",
+      "server_steps": [
+        {
+          "steps": [
+            {
+              "message": "\u5df2\u4e0a\u4f20\u81f3 /opt/\u4e0a\u4f20/\u4e3b\u7a0b\u5e8f.tgz",
+              "logs": [
+                "\u5df2\u4e0a\u4f20 \u4e3b\u7a0b\u5e8f.tgz -> /opt/\u4e0a\u4f20/\u4e3b\u7a0b\u5e8f.tgz"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

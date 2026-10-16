@@ -1,0 +1,11 @@
+=== 磁盘基线与落盘模式对比（256MB 负载）===
+磁盘_顺序写                   0.25s = 1043.0 MB/s
+磁盘_并发独立文件                0.11s = 2292.7 MB/s
+--- 走完整 HTTP 分片通道 ---
+A_offset并发6            上传   6.40s =   40.0 MB/s | complete  1.67s | OK | 大小一致 errs=0
+B_legacy并发6            上传   0.76s =  336.5 MB/s | complete  0.01s | FAIL | 大小-1 errs=0
+C_offset并发1            上传  34.09s =    7.5 MB/s | complete  0.15s | OK | 大小一致 errs=0
+D_offset并发6_4M         上传  12.45s =   20.6 MB/s | complete  0.15s | OK | 大小一致 errs=0
+E_offset并发12_16M       上传   7.21s =   35.5 MB/s | complete  1.62s | OK | 大小一致 errs=0
+
+EXIT=0

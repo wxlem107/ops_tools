@@ -1,0 +1,36 @@
+py2 运行时语义回归（模拟 py2 的 str 无 .hex()）
+解释器: Python 3.13.14  |  hasattr(bytes, "hex") = True
+------------------------------------------------------------------------
+
+== 口令摘要（模拟 py2）==
+  [OK] hash 为 hex 文本（64 字符，非原始二进制）
+  [OK] verify_password 通过正确口令
+  [OK] verify_password 拒绝错误口令
+  [OK] 不同盐值产生不同摘要
+  [OK] password_record_ok 认定新记录可用
+
+== 落盘往返（JsonStore）==
+  [OK] users.json 是合法 JSON 且无损坏字符
+  [OK] 落盘读回后仍能校验口令
+
+== 历史记录兼容 ==
+  [OK] 原始二进制摘要记录能按原长度比对
+  [OK] password_record_ok 不把损坏记录判为可用
+  [OK] password_record_ok 不把历史明文/过短记录判为可用
+
+== 启动修复 / 自检 ==
+[auth] admin 口令记录已损坏（早期 Python 2 版本写入的原始二进制摘要），无法登录，请用 --reset-admin-password 重置
+  [OK] diagnose() 报出损坏账号
+  [OK] 损坏记录下登录被拒（与线上现象一致）
+  [OK] 提供 --admin-password 时自动修复损坏记录
+  [OK] 修复后 diagnose() 无问题
+  [OK] 修复后可用新口令登录
+  [OK] 修复后旧口令仍无效
+
+== 纯 Python PBKDF2 兜底（py2.7.5 无 hashlib.pbkdf2_hmac）==
+  [OK] 兜底实现与 C 实现结果一致
+  [信息] 120000 次迭代的纯 Python 兜底耗时 0.96s（线上单次登录的摘要耗时）
+
+========================================================================
+通过 17 项，失败 0 项
+py2 运行时语义回归全部通过 ✅

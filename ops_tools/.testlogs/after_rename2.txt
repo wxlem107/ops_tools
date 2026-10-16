@@ -1,0 +1,13 @@
+=== selftest (exit=0) ===
+  [OK]   失败过滤
+  [OK]   失败被捕获
+  [OK]   API Token 通过
+通过 87 项，失败 0 项，用时 10.8s
+全部通过 ✅
+=== integration (exit=0) ===
+  [OK]   健康检查失败自动回滚
+通过 40 项，失败 0 项
+集成验证全部通过 ✅
+=== py2lint (exit=0) ===
+py2 异常捕获审查（漏写 IOError 的 except 子句）
+未发现漏写 IOError 的 except 子句（可接受项 6 处）—— 通过 ✅

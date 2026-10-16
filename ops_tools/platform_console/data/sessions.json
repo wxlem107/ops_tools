@@ -1,0 +1,28 @@
+{
+  "sessions": {
+    "a7a9e627635cc4748ec9e77a761c7e7fa6df67287beb089e": {
+      "username": "admin",
+      "role": "admin",
+      "servers": [
+        "*"
+      ],
+      "ip": "127.0.0.1",
+      "created": 1789899588.185586,
+      "last_seen": 1789899588.185586,
+      "expires": 1789942788.185586,
+      "via": "password"
+    },
+    "ff87baf3d917ad2d0a8d8ac1780e5b3c0e257d0a37f8eb6d": {
+      "username": "admin",
+      "role": "admin",
+      "servers": [
+        "*"
+      ],
+      "ip": "127.0.0.1",
+      "created": 1789899702.6846306,
+      "last_seen": 1789899702.6846306,
+      "expires": 1789942902.6846306,
+      "via": "password"
+    }
+  }
+}

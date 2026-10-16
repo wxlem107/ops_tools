@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Shell 远程命令执行</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #eef1f5; margin: 0; padding: 20px; }
+.wrap { max-width: 1060px; margin: 0 auto; }
+.topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.topbar h1 { font-size: 22px; color: #1f2937; margin: 0; }
+.topbar .sub { color: #6b7280; font-size: 13px; margin-left: 10px; }
+.sysinfo { background: #fff; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #4b5563; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+.tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.tab { padding: 8px 18px; border: 1px solid #d1d5db; background: #fff; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px; color: #374151; }
+.tab.active { background: #0052d9; color: #fff; border-color: #0052d9; }
+.btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; transition: .2s; }
+.btn-primary { background: #0052d9; color: #fff; } .btn-primary:hover { background: #003cab; }
+.btn-ghost { background: #fff; color: #374151; border: 1px solid #d1d5db; } .btn-ghost:hover { background: #f3f4f6; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.banner { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 8px; padding: 8px 12px; font-size: 12px; margin-bottom: 10px; }
+.banner.ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; padding: 4px 10px; border-radius: 14px; font-size: 12px; cursor: pointer; font-family: Consolas, monospace; }
+.chip:hover { background: #e0e7ff; }
+.term { background: #0b1020; color: #e5e7eb; border-radius: 10px; padding: 14px 16px; font-family: Consolas, Menlo, monospace; font-size: 13px; line-height: 1.55; height: 52vh; overflow: auto; white-space: pre-wrap; word-break: break-all; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.t-cmd { color: #7dd3fc; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+.t-cmd::before { content: '$ '; color: #4ade80; }
+.t-cmd .t-ts { color: #475569; font-size: 11px; font-weight: 400; margin-left: auto; }
+.t-out { margin: 0; }
+.t-err { color: #f87171; }
+.t-meta { color: #94a3b8; font-size: 12px; margin: 2px 0 10px; display: flex; align-items: center; gap: 8px; }
+.t-copy { cursor: pointer; color: #60a5fa; font-size: 11px; text-decoration: underline; }
+.t-copy:hover { color: #93c5fd; }
+.cmd-row { display: flex; gap: 8px; margin-top: 12px; align-items: flex-end; flex-wrap: wrap; }
+.cmd-row .prompt { color: #16a34a; font-family: Consolas, monospace; font-weight: 700; font-size: 14px; line-height: 38px; white-space: nowrap; }
+.cmd-row textarea { flex: 1; min-width: 240px; padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-family: Consolas, monospace; font-size: 13px; resize: vertical; min-height: 38px; max-height: 120px; line-height: 1.4; }
+.cmd-row select { padding: 9px 8px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 12px; background: #fff; }
+.session-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.session-bar select { padding: 8px 10px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 13px; background: #fff; max-width: 360px; }
+.session-bar .cwd { background: #0b1020; color: #4ade80; padding: 6px 12px; border-radius: 8px; font-family: Consolas, monospace; font-size: 12px; }
+.footer { text-align: center; color: #9ca3af; font-size: 11px; margin-top: 16px; }
+#toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 10px 22px; border-radius: 8px; color: #fff; font-size: 14px; z-index: 99; display: none; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+#toast.ok { background: #16a34a; } #toast.err { background: #dc2626; } #toast.warn { background: #d97706; }
+.login-mask { position: fixed; inset: 0; background: #eef1f5; z-index: 100; display: flex; align-items: center; justify-content: center; }
+.login-box { background: #fff; padding: 30px 34px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.12); text-align: center; width: 340px; }
+.login-box h2 { margin: 0 0 8px; } .login-box p { color: #6b7280; font-size: 13px; margin: 0 0 16px; }
+.login-box input { width: 100%; padding: 9px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 12px; box-sizing: border-box; }
+.login-box button { width: 100%; }
+.login-box .err { color: #dc2626; font-size: 12px; margin-top: 6px; display: none; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<div id="loginMask" class="login-mask" style="display:none;">
+  <div class="login-box">
+    <h2>🔐 Web Shell</h2>
+    <p>请输入访问令牌</p>
+    <input type="password" id="loginToken" placeholder="访问令牌">
+    <button class="btn btn-primary" onclick="doLogin()">进入</button>
+    <div class="err" id="loginErr">令牌错误，请重试</div>
+  </div>
+</div>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>🖥 Web Shell 远程命令执行</h1>
+      <span class="sub">浏览器下发 Shell 命令并回显结果（v{{version}}）</span>
+    </div>
+    <div class="sysinfo" id="sysInfo">加载中...</div>
+  </div>
+  <div id="policyBanner"></div>
+  <div class="tabs">
+    <div class="tab active" id="tabExec" onclick="switchTab('exec')">单次执行</div>
+    <div class="tab" id="tabSession" onclick="switchTab('session')">会话终端</div>
+  </div>
+
+  <!-- 单次执行 -->
+  <div id="panelExec">
+    <div class="chips" id="chips"></div>
+    <div class="term" id="term1"><div class="t-meta">欢迎使用 Web Shell v{{version}}。单次执行：输入命令后回显实时输出（SSE）；旧接口 /api/exec 作为降级兜底。</div></div>
+    <div class="cmd-row">
+      <span class="prompt">$</span>
+      <textarea id="cmdInput" rows="1" placeholder="输入 Shell 命令，Enter 执行，Shift+Enter 换行，↑/↓ 历史" autocomplete="off" spellcheck="false"></textarea>
+      <select id="timeoutSel1" title="超时时间">
+        <option value="10">10s</option>
+        <option value="30" selected>30s</option>
+        <option value="60">60s</option>
+        <option value="120">120s</option>
+        <option value="300">300s</option>
+      </select>
+      <button class="btn btn-primary" id="runBtn1" onclick="execCmd()">执行 ⏎</button>
+      <button class="btn btn-ghost" onclick="clearTerm(1)">清空</button>
+      <button class="btn btn-ghost" onclick="exportTerm(1)">导出</button>
+    </div>
+  </div>
+
+  <!-- 会话终端 -->
+  <div id="panelSession" class="hidden">
+    <div class="session-bar">
+      <button class="btn btn-primary btn-sm" onclick="createSession()">＋ 新建会话</button>
+      <select id="sessionSelect" onchange="selectSession(this.value)"></select>
+      <button class="btn btn-ghost btn-sm" onclick="deleteSession()">关闭会话</button>
+      <span class="cwd" id="sessionCwd">未选择会话</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadSessions()">刷新列表</button>
+    </div>
+    <div class="chips" id="chips2"></div>
+    <div class="term" id="term2"><div class="t-meta">会话终端：新建/选择一个会话后，cd / export 等状态会在会话内持久保留。输入命令回车执行。</div></div>
+    <div class="cmd-row">
+      <span class="prompt" id="sessionPrompt">$</span>
+      <textarea id="cmdInput2" rows="1" placeholder="在会话内执行命令（状态持久），Enter 执行，↑/↓ 历史" autocomplete="off" spellcheck="false"></textarea>
+      <select id="timeoutSel2" title="超时时间">
+        <option value="10">10s</option>
+        <option value="30" selected>30s</option>
+        <option value="60">60s</option>
+        <option value="120">120s</option>
+        <option value="300">300s</option>
+      </select>
+      <button class="btn btn-primary" id="runBtn2" onclick="sessionExec()">执行 ⏎</button>
+      <button class="btn btn-ghost" onclick="clearTerm(2)">清空</button>
+      <button class="btn btn-ghost" onclick="exportTerm(2)">导出</button>
+    </div>
+  </div>
+
+  <div class="footer">web_shell.py v{{version}} | 零依赖 Python 2.7.5+ / 3.7.5+ 标准库 | 请确保网络受信</div>
+</div>
+<div id="toast"></div>
+<script>
+window.needLogin = false;
+function storeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function storeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function storeDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+function loadJson(k, fb) { try { const v = JSON.parse(storeGet(k)); return v == null ? fb : v; } catch (e) { return fb; } }
+let token = storeGet('ws_token') || '';
+let sysStatus = null;
+let running1 = false, running2 = false;
+const $ = id => document.getElementById(id);
+const term1 = $('term1'), term2 = $('term2');
+const input1 = $('cmdInput'), input2 = $('cmdInput2');
+let hist = loadJson('ws_hist', []);
+let histIdx = hist.length;
+let blockSeq = 0;
+let curOutEl1 = null, curOutEl2 = null;
+
+function toast(msg, type) {
+  const t = $('toast');
+  t.className = type || 'ok';
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.display = 'none', 2600);
+}
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+function addHtml(el, html) { el.insertAdjacentHTML('beforeend', html); el.scrollTop = el.scrollHeight; }
+function clearTerm(which) { (which === 1 ? term1 : term2).innerHTML = ''; }
+function ensureOut(which) {
+  const el = which === 1 ? term1 : term2;
+  let ref = which === 1 ? curOutEl1 : curOutEl2;
+  if (!ref) {
+    ref = document.createElement('div');
+    ref.className = 't-out';
+    el.appendChild(ref);
+    if (which === 1) curOutEl1 = ref; else curOutEl2 = ref;
+  }
+  return ref;
+}
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (e) {} a.remove(); }, 100);
+}
+function exportTerm(which) { downloadText('exec_output.txt', (which === 1 ? term1 : term2).innerText); }
+function copyText(text, el) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (el) { el.textContent = '已复制'; setTimeout(() => el.textContent = '复制', 1200); }
+  }).catch(() => toast('复制失败', 'err'));
+}
+
+async function api(url, opts) {
+  opts = opts || {};
+  const h = opts.headers || {};
+  if (token) h['X-Auth-Token'] = token;
+  opts.headers = h;
+  const res = await fetch(url, opts);
+  if (res.status === 401) { showLogin(); throw new Error('未授权'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok && data.status !== 'success') throw new Error(data.message || ('HTTP ' + res.status));
+  return data;
+}
+
+// SSE 读取：基于 fetch 的流式响应，逐行解析 event:/data: 帧
+// opts 支持 {method, body}：命令走 POST 请求体，URL 上不出现 cmd=... （避免被安全
+// 设备的「URI 命令执行」特征规则误判成 webshell 攻击），token 走请求头。
+function sseConnect(url, handlers, opts) {
+  opts = opts || {};
+  const headers = {};
+  if (token) headers['X-Auth-Token'] = token;
+  if (opts.body) headers['Content-Type'] = 'application/json';
+  fetch(url, { method: opts.method || 'GET', headers: headers, body: opts.body, cache: 'no-store' })
+    .then(resp => {
+      if (!resp.ok) { handlers.onError && handlers.onError(resp); return; }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buf = '', curName = '', curData = '';
+      function pump() {
+        reader.read().then(({ done, value }) => {
+          if (done) return;
+          buf += decoder.decode(value, { stream: true });
+          let idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, idx);
+            buf = buf.slice(idx + 1);
+            if (line === '') {
+              if (curName || curData) {
+                handlers.onEvent(curName || 'message', curData.replace(/\n$/, ''));
+                curName = ''; curData = '';
+              }
+            } else if (line.startsWith('event:')) {
+              curName = line.slice(6).trim();
+            } else if (line.startsWith('data:')) {
+              let d = line.slice(5);
+              if (d.startsWith(' ')) d = d.slice(1);
+              curData += d + '\n';
+            }
+            // 以 ':' 开头的注释/心跳行忽略
+          }
+          pump();
+        }).catch(() => { handlers.onError && handlers.onError(); });
+      }
+      pump();
+    })
+    .catch(() => { handlers.onError && handlers.onError(); });
+}
+
+// ================= 登录 =================
+function showLogin() { $('loginMask').style.display = 'flex'; setTimeout(() => $('loginToken').focus(), 50); }
+async function doLogin() {
+  token = $('loginToken').value.trim();
+  storeSet('ws_token', token);
+  $('loginErr').style.display = 'none';
+  try { await api('/api/ping'); $('loginMask').style.display = 'none'; loadStatus(); }
+  catch (e) { storeDel('ws_token'); token = ''; $('loginErr').style.display = 'block'; }
+}
+
+// ================= 状态 / 快捷命令 =================
+async function loadStatus() {
+  try {
+    sysStatus = await api('/api/status');
+    $('sysInfo').textContent = sysStatus.user + '@' + sysStatus.hostname + ' · ' + sysStatus.os + ' · ' + sysStatus.cwd;
+    const b = $('policyBanner');
+    if (sysStatus.allow && sysStatus.allow.length) {
+      b.className = 'banner ok';
+      b.innerHTML = '✅ 白名单模式，仅允许：' + esc(sysStatus.allow.join(', '));
+    } else {
+      b.className = 'banner';
+      b.innerHTML = '⚠️ 未启用白名单：可执行任意 Shell 命令，请确保网络受信且已设置令牌！';
+    }
+    const chips = (sysStatus.allow && sysStatus.allow.length) ? sysStatus.allow : window.DEFAULT_CHIPS;
+    renderChips('chips', chips);
+    renderChips('chips2', chips);
+  } catch (e) { toast(e.message, 'err'); }
+}
+function renderChips(id, chips) {
+  $(id).innerHTML = (chips || []).map(c => '<span class="chip" data-cmd="' + esc(c) + '">' + esc(c) + '</span>').join('');
+}
+$('chips').addEventListener('click', e => { const el = e.target.closest('.chip'); if (el && el.dataset.cmd) { input1.value = el.dataset.cmd; execCmd(); } });
+$('chips2').addEventListener('click', e => { const el = e.target.closest('.chip'); if (el && el.dataset.cmd) { input2.value = el.dataset.cmd; sessionExec(); } });
+
+// ================= 单次执行（SSE，降级 /api/exec） =================
+function pushHist(cmd) {
+  if (hist[hist.length - 1] !== cmd) { hist.push(cmd); if (hist.length > 200) hist.shift(); storeSet('ws_hist', JSON.stringify(hist)); }
+  histIdx = hist.length;
+}
+async function execCmd() {
+  const cmd = input1.value.trim();
+  if (!cmd || running1) return;
+  running1 = true; $('runBtn1').disabled = true;
+  pushHist(cmd);
+  const ts = new Date().toLocaleTimeString();
+  addHtml(term1, '<div class="t-cmd">' + esc(cmd) + '<span class="t-ts">' + ts + '</span></div>');
+  input1.value = ''; input1.style.height = 'auto';
+  const tSel = parseInt($('timeoutSel1').value) || 30;
+  curOutEl1 = null;
+  let gotStart = false, fellBack = false;
+  // 命令放 POST 请求体：URL 保持恒定的 /api/exec/stream，不再携带 cmd=...
+  const url = '/api/exec/stream';
+  sseConnect(url, {
+    onEvent(name, data) {
+      if (name === 'start') { gotStart = true; return; }
+      if (name === 'out' || name === 'err') { ensureOut(1).appendChild(document.createTextNode(data)); term1.scrollTop = term1.scrollHeight; return; }
+      if (name === 'exit') {
+        let meta; try { meta = JSON.parse(data); } catch (e) { meta = {}; }
+        const codeColor = (meta.returncode === 0) ? '#4ade80' : '#f87171';
+        let m = '<div class="t-meta"><span style="color:' + codeColor + '">[返回码 ' + (meta.returncode != null ? meta.returncode : '?') + ']</span> 耗时 ' + (meta.elapsed || 0) + 's';
+        if (meta.timed_out) m += ' · ⚠️ 超时被强制结束';
+        if (meta.truncated) m += ' · ✂️ 输出过长已截断';
+        m += '</div>';
+        addHtml(term1, m);
+        running1 = false; $('runBtn1').disabled = false; input1.focus();
+      }
+    },
+    onError() {
+      if (!gotStart && !fellBack) { fellBack = true; fallbackExec(cmd, tSel); }
+      running1 = false; $('runBtn1').disabled = false;
+    }
+  }, { method: 'POST', body: JSON.stringify({ cmd: cmd, timeout: tSel }) });
+}
+function fallbackExec(cmd, tSel) {
+  api('/api/exec', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cmd: cmd, timeout: tSel }) })
+    .then(r => {
+      let html = '';
+      if (r.stdout) html += '<div class="t-out">' + esc(r.stdout) + '</div>';
+      if (r.stderr) html += '<div class="t-err">' + esc(r.stderr) + '</div>';
+      const codeColor = (r.code === 0) ? '#4ade80' : '#f87171';
+      html += '<div class="t-meta"><span style="color:' + codeColor + '">[返回码 ' + r.code + ']</span> 耗时 ' + r.duration + 's'
+        + (r.timed_out ? ' · ⚠️ 超时被强制结束' : '') + (r.truncated ? ' · ✂️ 输出过长已截断' : '') + '</div>';
+      addHtml(term1, html);
+    })
+    .catch(e => addHtml(term1, '<div class="t-err">[错误] ' + esc(e.message) + '</div>'))
+    .finally(() => { running1 = false; $('runBtn1').disabled = false; input1.focus(); });
+}
+
+// ================= 会话终端 =================
+let sessions = [];
+let currentSessionId = '';
+function loadSessions() {
+  api('/api/sessions').then(r => { sessions = r.sessions || []; renderSessionSelect(); })
+    .catch(e => toast(e.message, 'err'));
+}
+function renderSessionSelect() {
+  const sel = $('sessionSelect');
+  sel.innerHTML = sessions.map(s => '<option value="' + esc(s.session_id) + '">' + esc(s.session_id) + ' · ' + esc(s.cwd) + '</option>').join('');
+  if (!currentSessionId && sessions.length) selectSession(sessions[0].session_id);
+  else if (currentSessionId) sel.value = currentSessionId;
+}
+function selectSession(sid) {
+  currentSessionId = sid;
+  $('sessionSelect').value = sid;
+  const s = sessions.find(x => x.session_id === sid);
+  if (s) { $('sessionCwd').textContent = s.cwd; $('sessionPrompt').textContent = (sysStatus ? sysStatus.user : 'user') + '@' + (sysStatus ? sysStatus.hostname : 'host') + ':' + s.cwd + ' $'; }
+}
+function createSession() {
+  api('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+    .then(r => { loadSessions(); toast('已创建会话 ' + r.session_id, 'ok'); selectSession(r.session_id); })
+    .catch(e => toast(e.message, 'err'));
+}
+function deleteSession() {
+  if (!currentSessionId) { toast('请先创建会话', 'warn'); return; }
+  const sid = currentSessionId;
+  api('/api/sessions/' + sid, { method: 'DELETE' })
+    .then(() => { sessions = sessions.filter(x => x.session_id !== sid); currentSessionId = ''; renderSessionSelect(); toast('会话已关闭', 'ok'); })
+    .catch(e => toast(e.message, 'err'));
+}
+function sessionExec() {
+  const cmd = input2.value.trim();
+  if (!cmd) return;
+  if (!currentSessionId) { toast('请先创建/选择会话', 'warn'); return; }
+  if (running2) return;
+  running2 = true; $('runBtn2').disabled = true;
+  pushHist(cmd);
+  const ts = new Date().toLocaleTimeString();
+  addHtml(term2, '<div class="t-cmd">' + esc(cmd) + '<span class="t-ts">' + ts + '</span></div>');
+  input2.value = ''; input2.style.height = 'auto';
+  const tSel = parseInt($('timeoutSel2').value) || 30;
+  curOutEl2 = null;
+  // 同样把命令放 POST 请求体（URI 恒定，不带 cmd=...）
+  const url = '/api/sessions/' + encodeURIComponent(currentSessionId) + '/stream';
+  sseConnect(url, {
+    onEvent(name, data) {
+      if (name === 'start') return;
+      if (name === 'out' || name === 'err') { ensureOut(2).appendChild(document.createTextNode(data)); term2.scrollTop = term2.scrollHeight; return; }
+      if (name === 'exit') {
+        let meta; try { meta = JSON.parse(data); } catch (e) { meta = {}; }
+        const codeColor = (meta.returncode === 0) ? '#4ade80' : '#f87171';
+        let m = '<div class="t-meta"><span style="color:' + codeColor + '">[返回码 ' + (meta.returncode != null ? meta.returncode : '?') + ']</span> 耗时 ' + (meta.elapsed || 0) + 's';
+        if (meta.timed_out) m += ' · ⚠️ 超时';
+        if (meta.truncated) m += ' · ✂️ 截断';
+        m += '</div>';
+        addHtml(term2, m);
+        if (meta.cwd) {
+          $('sessionCwd').textContent = meta.cwd;
+          const s = sessions.find(x => x.session_id === currentSessionId);
+          if (s) s.cwd = meta.cwd;
+          $('sessionPrompt').textContent = (sysStatus ? sysStatus.user : 'user') + '@' + (sysStatus ? sysStatus.hostname : 'host') + ':' + meta.cwd + ' $';
+        }
+        running2 = false; $('runBtn2').disabled = false; input2.focus();
+      }
+    },
+    onError() { running2 = false; $('runBtn2').disabled = false; }
+  }, { method: 'POST', body: JSON.stringify({ cmd: cmd, timeout: tSel }) });
+}
+
+// ================= Tab 切换 =================
+function switchTab(name) {
+  const exec = name === 'exec';
+  $('tabExec').className = 'tab' + (exec ? ' active' : '');
+  $('tabSession').className = 'tab' + (exec ? '' : ' active');
+  $('panelExec').className = exec ? '' : 'hidden';
+  $('panelSession').className = exec ? 'hidden' : '';
+  if (!exec && !sessions.length) loadSessions();
+}
+
+// ================= 历史（↑/↓） =================
+function bindHistory(el, which) {
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (which === 1) execCmd(); else sessionExec(); }
+    else if (e.key === 'ArrowUp' && el.selectionStart === 0) {
+      if (hist.length) { histIdx = Math.max(0, histIdx - 1); el.value = hist[histIdx] || ''; }
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown' && el.selectionEnd === el.value.length) {
+      histIdx = Math.min(hist.length, histIdx + 1); el.value = hist[histIdx] || '';
+      e.preventDefault();
+    }
+  });
+  el.addEventListener('input', () => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; });
+}
+bindHistory(input1, 1);
+bindHistory(input2, 2);
+
+(async function init() {
+  window.DEFAULT_CHIPS = {{default_chips}};
+  if (window.needLogin && !storeGet('ws_token')) { showLogin(); return; }
+  try { await api('/api/ping'); loadStatus(); } catch (e) { showLogin(); }
+})();
+</script>
+</body>
+</html>

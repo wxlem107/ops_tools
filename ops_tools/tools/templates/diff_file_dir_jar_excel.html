@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文件比对工具 v2.1</title>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--border:#e3e8ef;--primary:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;--muted:#64748b}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:#1e293b}
+header{background:#1e293b;color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header h1{font-size:18px;margin:0}
+.token-box{font-size:12px;color:#cbd5e1}
+.token-box input{margin-left:6px;padding:4px 8px;border-radius:4px;border:1px solid #475569;background:#0f172a;color:#e2e8f0;width:200px}
+.tabs{display:flex;gap:4px;padding:12px 24px 0;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tab{border:none;background:none;padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.panel{display:none;padding:20px 24px;max-width:1500px;margin:0 auto}
+.panel.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.input-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px}
+.input-card h3{margin:0 0 10px;font-size:14px}
+input[type=text],textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-bottom:8px}
+input[type=file]{font-size:12px;margin-bottom:6px}
+small.hint{color:var(--muted);font-size:12px}
+.toolbar{display:flex;gap:12px;align-items:center;margin:14px 0;flex-wrap:wrap}
+button.primary{background:var(--primary);border:none;color:#fff;padding:9px 22px;border-radius:6px;font-size:14px;cursor:pointer}
+button.primary:disabled{opacity:.5;cursor:not-allowed}
+button.ghost{background:#fff;border:1px solid var(--primary);color:var(--primary);padding:7px 14px;border-radius:6px;font-size:13px;cursor:pointer}
+label.chk{font-size:13px;margin-right:16px;user-select:none}
+.status{font-size:13px;color:var(--muted)}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.badge{padding:4px 12px;border-radius:999px;font-size:13px;color:#fff}
+.badge.ok{background:var(--ok)}.badge.bad{background:var(--bad)}.badge.warn{background:var(--warn)}.badge.muted{background:var(--muted)}
+.msg{padding:10px 14px;border-radius:6px;font-size:13px;margin:10px 0}
+.msg.ok{background:#dcfce7;color:#166534}.msg.error{background:#fee2e2;color:#991b1b}
+.msg.warn{background:#fef3c7;color:#92400e}.msg.info{background:#dbeafe;color:#1e40af}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13px;margin:8px 0}
+th,td{border:1px solid var(--border);padding:6px 10px;text-align:left;vertical-align:top;word-break:break-all}
+th{background:#f1f5f9;white-space:nowrap}
+tr.st-different td{background:#fef2f2}
+tr.st-only_in_left td,tr.st-only_in_right td{background:#fffbeb}
+tr.detail-row td{background:#f8fafc;padding:12px}
+.mono{font-family:Consolas,monospace;font-size:12px}
+button.link{border:none;background:none;color:var(--primary);cursor:pointer;font-size:13px;padding:2px 6px;text-decoration:underline}
+.htmldiff{overflow:auto;border:1px solid var(--border);border-radius:6px;margin:8px 0;background:#fff}
+.htmldiff table.sbs{width:100%;border-collapse:collapse;margin:0}
+.htmldiff td,.htmldiff th{border:1px solid var(--border);padding:3px 8px;font-size:12px}
+.htmldiff th.sbs-h{background:#f1f5f9;text-align:left;font-size:13px;font-weight:600}
+.htmldiff td.ln{width:44px;min-width:44px;text-align:right;color:var(--muted);
+                background:#f8fafc;font-family:Consolas,monospace;white-space:nowrap}
+.htmldiff td.code{font-family:Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+.htmldiff tr.d-chg td.code{background:#fee2e2}
+.htmldiff tr.d-del td.code.left{background:#ffedd5}
+.htmldiff tr.d-del td.code.right{background:#fafafa}
+.htmldiff tr.d-add td.code.right{background:#dcfce7}
+.htmldiff tr.d-add td.code.left{background:#fafafa}
+.htmldiff tr.d-chg td.code .intra{background:#ef4444;color:#fff;border-radius:2px;padding:0 1px}
+.htmldiff tr.d-skip td{background:#f1f5f9;color:var(--muted);text-align:center}
+pre.code{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:6px;overflow:auto;font-size:12px;max-height:480px}
+table.kv th{width:160px;background:#f1f5f9}
+.loading{color:var(--muted);font-size:13px}
+details.sheet{border:1px solid var(--border);border-radius:6px;margin:8px 0;background:#fff}
+details.sheet summary{padding:10px 14px;cursor:pointer;font-weight:600;font-size:14px}
+details.sheet>table,details.sheet>.msg{margin:0 14px 12px}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:#eff6ff}
+.badge[data-filter]{cursor:pointer;user-select:none;transition:opacity .15s}
+.badge[data-filter]:hover{opacity:.85}
+.badge.dim{opacity:.35}
+.badge[data-active="1"]{outline:2px solid var(--primary);outline-offset:2px}
+.filter-bar{display:flex;align-items:center;gap:12px}
+/* 三向三列视图 */
+.three-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.three-cols .col{background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px;max-height:420px;overflow:auto}
+.three-cols .col h4{margin:0 0 8px;font-size:13px;position:sticky;top:0;background:#f1f5f9;padding:6px}
+/* 进度条 */
+.progress{height:14px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin:10px 0}
+.progress-bar{height:100%;background:var(--primary);width:0;transition:width .3s}
+/* 历史面板 */
+.hist-item{border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff}
+.hist-item .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+.hist-item .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.pager{display:flex;gap:10px;align-items:center;margin:10px 0}
+/* 弹窗 */
+.modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:flex-start;justify-content:center;padding:40px 12px;z-index:50;overflow:auto}
+.modal-mask.show{display:flex}
+.modal{background:#fff;border-radius:10px;width:min(880px,96vw);padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.modal h2{margin:0 0 12px;font-size:16px}
+.modal .close{float:right;cursor:pointer;color:var(--muted);font-size:20px}
+.ignore-row{display:grid;grid-template-columns:1.4fr .8fr 1.4fr auto auto;gap:8px;align-items:center;margin-bottom:6px}
+.ignore-row input,.ignore-row select{margin:0;font-size:12px}
+.test-box{background:#f8fafc;border:1px dashed var(--border);border-radius:6px;padding:10px;margin-top:10px;font-size:13px}
+.batch-pairs{font-family:Consolas,monospace}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;
+       padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;z-index:99;pointer-events:none}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>文件 / 文件夹 / Jar / Excel / 三向 / 批量 比对工具 v2.1</h1>
+  <div style="display:flex;gap:12px;align-items:center">
+    <button class="ghost" id="ignore-btn">忽略规则配置</button>
+    <div class="token-box">Token<input id="token" type="password" placeholder="服务端设置了 COMPARE_TOKEN 时必填"></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="auto">自动比对</button>
+  <button class="tab" data-tab="dir">文件夹比对</button>
+  <button class="tab" data-tab="jar">Jar 比对</button>
+  <button class="tab" data-tab="text">文本比对</button>
+  <button class="tab" data-tab="excel">Excel 比对</button>
+  <button class="tab" data-tab="three">三向比对</button>
+  <button class="tab" data-tab="batch">批量比对</button>
+  <button class="tab" data-tab="history">历史记录</button>
+</nav>
+
+<!-- 自动比对 -->
+<section id="tab-auto" class="panel active">
+  <div class="grid2">
+    <div class="input-card"><h3>左侧（目录 / 文件 / Jar / Excel 均可）</h3>
+      <input type="text" id="auto-left-path" placeholder="服务器路径">
+      <input type="file" id="auto-left-file">
+      <small class="hint">路径与上传二选一，上传优先；类型由服务端自动识别</small>
+    </div>
+    <div class="input-card"><h3>右侧</h3>
+      <input type="text" id="auto-right-path" placeholder="服务器路径">
+      <input type="file" id="auto-right-file">
+      <small class="hint">路径与上传二选一，上传优先</small>
+    </div>
+  </div>
+  <div class="card">
+    <label class="chk"><input type="checkbox" id="auto-usesaved" checked> 应用已保存忽略规则</label>
+    <input type="text" id="auto-ignore" placeholder="临时忽略规则（逗号分隔，可选），如 *.log,.git/">
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="auto-btn">开始比对</button>
+    <span class="status" id="auto-status"></span>
+  </div>
+  <div id="auto-result"></div>
+</section>
+
+<!-- 文件夹比对 -->
+<section id="tab-dir" class="panel">
+  <div class="grid2">
+    <div class="input-card"><h3>目录 1</h3><input type="text" id="dir1" placeholder="服务器目录路径"></div>
+    <div class="input-card"><h3>目录 2</h3><input type="text" id="dir2" placeholder="服务器目录路径"></div>
+  </div>
+  <div class="card">
+    <label class="chk"><input type="checkbox" id="dir-sizeonly"> 只比大小（不逐字节比内容）</label>
+    <label class="chk"><input type="checkbox" id="dir-onlydiff"> 只看差异项</label>
+    <label class="chk"><input type="checkbox" id="dir-usesaved" checked> 应用已保存忽略规则</label>
+    <input type="text" id="dir-ignore" placeholder="临时忽略规则（逗号分隔，可选）">
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="dir-btn">开始比对目录</button>
+    <span class="status" id="dir-status"></span>
+  </div>
+  <div id="dir-result"></div>
+</section>
+
+<!-- Jar 比对 -->
+<section id="tab-jar" class="panel">
+  <div class="card">
+    <small class="hint">支持输入服务器本地路径或上传；两者都填时上传优先。比对基于条目 CRC 快速判定，点击行内按钮可查看条目内容级差异（会话保留 30 分钟）。</small>
+  </div>
+  <div class="grid2">
+    <div class="input-card"><h3>Jar 1</h3>
+      <input type="text" id="jar1-path" placeholder="服务器 jar 路径">
+      <input type="file" id="jar1-file" accept=".jar,.war,.zip,.ear,.apk">
+    </div>
+    <div class="input-card"><h3>Jar 2</h3>
+      <input type="text" id="jar2-path" placeholder="服务器 jar 路径">
+      <input type="file" id="jar2-file" accept=".jar,.war,.zip,.ear,.apk">
+    </div>
+  </div>
+  <div class="card">
+    <label class="chk"><input type="checkbox" id="jar-ignoresign" checked> 忽略签名文件（META-INF/*.SF|RSA|DSA|EC）</label>
+    <textarea id="jar-ignores" rows="2" placeholder="自定义忽略正则，每行一个，如 ^META-INF/maven/.*"></textarea>
+    <label class="chk"><input type="checkbox" id="jar-usesaved" checked> 应用已保存忽略规则</label>
+    <input type="text" id="jar-ignore" placeholder="临时忽略规则（逗号分隔，可选）">
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="jar-btn">开始比对 Jar</button>
+    <span class="status" id="jar-status"></span>
+  </div>
+  <div id="jar-result"></div>
+</section>
+
+<!-- 文本比对 -->
+<section id="tab-text" class="panel">
+  <div class="grid2">
+    <div class="input-card"><h3>文件 1</h3>
+      <input type="text" id="file1-path" placeholder="服务器文件路径">
+      <input type="file" id="file1-file">
+    </div>
+    <div class="input-card"><h3>文件 2</h3>
+      <input type="text" id="file2-path" placeholder="服务器文件路径">
+      <input type="file" id="file2-file">
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="file-btn">开始比对文件</button>
+    <span class="status" id="file-status"></span>
+  </div>
+  <div id="file-result"></div>
+</section>
+
+<!-- Excel 比对 -->
+<section id="tab-excel" class="panel">
+  <div class="grid2">
+    <div class="input-card"><h3>Excel 1</h3>
+      <input type="text" id="excel1-path" placeholder="服务器 Excel 路径">
+      <input type="file" id="excel1-file" accept=".xlsx,.xlsm">
+    </div>
+    <div class="input-card"><h3>Excel 2</h3>
+      <input type="text" id="excel2-path" placeholder="服务器 Excel 路径">
+      <input type="file" id="excel2-file" accept=".xlsx,.xlsm">
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="excel-btn">开始比对 Excel</button>
+    <label class="chk"><input type="checkbox" id="excel-formula"> 比对公式文本（默认比缓存值）</label>
+    <span class="status" id="excel-status"></span>
+  </div>
+  <div id="excel-result"></div>
+</section>
+
+<!-- 三向比对 -->
+<section id="tab-three" class="panel">
+  <div class="card">
+    <small class="hint">基线为参照基准，分别做「基线 vs 左(A)」「基线 vs 右(B)」，再聚合出：基线独有 / A 独有 / B 独有 / A 与 B 共同（含冲突）四类变更，以及各自相对基线的差异方向。</small>
+  </div>
+  <div class="input-card" style="margin-bottom:12px"><h3>基线（base）</h3>
+    <input type="text" id="three-base-path" placeholder="服务器路径或上传">
+    <input type="file" id="three-base-file">
+  </div>
+  <div class="grid2">
+    <div class="input-card"><h3>版本 A（left）</h3>
+      <input type="text" id="three-left-path" placeholder="服务器路径或上传">
+      <input type="file" id="three-left-file">
+    </div>
+    <div class="input-card"><h3>版本 B（right）</h3>
+      <input type="text" id="three-right-path" placeholder="服务器路径或上传">
+      <input type="file" id="three-right-file">
+    </div>
+  </div>
+  <div class="card">
+    <label class="chk"><input type="checkbox" id="three-usesaved" checked> 应用已保存忽略规则</label>
+    <input type="text" id="three-ignore" placeholder="临时忽略规则（逗号分隔，可选）">
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="three-btn">开始三向比对</button>
+    <span class="status" id="three-status"></span>
+  </div>
+  <div id="three-result"></div>
+</section>
+
+<!-- 批量比对 -->
+<section id="tab-batch" class="panel">
+  <div class="card">
+    <small class="hint">每行一对目录：<b>左路径 | 右路径</b>（支持多对）。对数 &gt; 3 时走异步任务，可用 SSE/轮询查看进度；否则同步返回汇总矩阵。</small>
+  </div>
+  <div class="input-card" style="margin-bottom:12px">
+    <h3>比对配对</h3>
+    <textarea id="batch-pairs" class="batch-pairs" rows="6" placeholder="/data/a | /data/b&#10;/data/c | /data/d"></textarea>
+  </div>
+  <div class="card">
+    <label class="chk"><input type="checkbox" id="batch-usesaved" checked> 应用已保存忽略规则</label>
+    <input type="text" id="batch-ignore" placeholder="临时忽略规则（逗号分隔，可选）">
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="batch-btn">开始批量比对</button>
+    <span class="status" id="batch-status"></span>
+  </div>
+  <div class="progress" id="batch-progress" style="display:none"><div class="progress-bar" id="batch-bar"></div></div>
+  <div id="batch-result"></div>
+</section>
+
+<!-- 历史记录 -->
+<section id="tab-history" class="panel">
+  <div class="toolbar">
+    <label class="chk">类型筛选
+      <select id="hist-type">
+        <option value="">全部</option>
+        <option value="auto">自动</option>
+        <option value="dir">文件夹</option>
+        <option value="jar">Jar</option>
+        <option value="file">文本</option>
+        <option value="excel">Excel</option>
+        <option value="three">三向</option>
+        <option value="batch">批量</option>
+        <option value="ooxml">docx/pptx</option>
+      </select>
+    </label>
+    <button class="ghost" id="hist-refresh">刷新</button>
+    <span class="status" id="hist-status"></span>
+  </div>
+  <div class="pager">
+    <button class="ghost" id="hist-prev">上一页</button>
+    <span id="hist-pageinfo">第 1 页</span>
+    <button class="ghost" id="hist-next">下一页</button>
+  </div>
+  <div id="hist-list"></div>
+</section>
+
+<!-- 忽略规则弹窗 -->
+<div class="modal-mask" id="ignore-mask">
+  <div class="modal">
+    <span class="close" id="ignore-close">×</span>
+    <h2>忽略规则配置</h2>
+    <div id="ignore-list"></div>
+    <div class="ignore-row" style="margin-top:10px;border-top:1px dashed var(--border);padding-top:10px">
+      <input type="text" id="ig-pattern" placeholder="规则（glob，如 *.log、.git/、META-INF/*.SF|*.DSA）">
+      <select id="ig-scope">
+        <option value="all">全部</option>
+        <option value="dir">目录</option>
+        <option value="jar">Jar</option>
+        <option value="text">文本</option>
+      </select>
+      <input type="text" id="ig-comment" placeholder="备注">
+      <button class="ghost" id="ig-add">添加</button>
+      <button class="primary" id="ig-save">保存全部</button>
+    </div>
+    <div class="test-box">
+      <b>试匹配：</b>
+      <input type="text" id="ig-test-path" placeholder="输入文件名/路径，如 app.log 或 META-INF/x.SF" style="width:320px;display:inline-block;margin:0 6px">
+      <select id="ig-test-scope">
+        <option value="all">全部</option><option value="dir">目录</option>
+        <option value="jar">Jar</option><option value="text">文本</option>
+      </select>
+      <button class="ghost" id="ig-test">试匹配</button>
+      <div id="ig-test-out" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const STATUS_TEXT = {same:"相同", different:"不同", only_in_left:"仅左侧", only_in_right:"仅右侧"};
+const KIND_TEXT = {"text":"文本", "class":"字节码", "nested-archive":"嵌套包", "binary":"二进制"};
+const KIND_LABEL = {dir:"目录", xlsx:"Excel", jar:"Jar/Zip 归档", zip:"Zip 归档", text:"文本",
+                    binary:"二进制", image:"图片", docx:"Word", pptx:"PPT"};
+const SHEET_STATUS = {same:"相同", different:"不同", only_in_left:"仅左侧", only_in_right:"仅右侧"};
+
+document.querySelectorAll(".tab").forEach(btn => btn.onclick = () => {
+  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  btn.classList.add("active");
+  $("tab-" + btn.dataset.tab).classList.add("active");
+  if (btn.dataset.tab === "history") loadHistory();
+});
+
+function tokenHeaders(){
+  const t = $("token").value.trim();
+  return t ? {"X-Compare-Token": t} : {};
+}
+function tokenQuery(){
+  const t = $("token").value.trim();
+  return t ? ("?token=" + encodeURIComponent(t)) : "";
+}
+async function parseResp(r){
+  try { return await r.json(); }
+  catch(e){ throw new Error("HTTP " + r.status + "（响应不是 JSON：可能文件过大 / 鉴权失败）"); }
+}
+async function postJSON(url, body){
+  const r = await fetch(url, {method:"POST",
+    headers:{"Content-Type":"application/json", ...tokenHeaders()},
+    body: JSON.stringify(body)});
+  return parseResp(r);
+}
+async function getJSON(url){
+  const r = await fetch(url, {headers:tokenHeaders()});
+  return parseResp(r);
+}
+async function postForm(url, fd){
+  const r = await fetch(url, {method:"POST", headers:tokenHeaders(), body:fd});
+  return parseResp(r);
+}
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g,
+    c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function fmtSize(n){
+  if (n == null) return "-";
+  const u = ["B","KB","MB","GB"]; let i = 0;
+  while (n >= 1024 && i < 3){ n /= 1024; i++; }
+  return (i ? n.toFixed(1) : n) + " " + u[i];
+}
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function failBox(container, msg){ container.innerHTML = `<div class="msg error">${esc(msg)}</div>`; }
+function withBusy(btn, statusEl, fn){
+  return async () => {
+    btn.disabled = true; statusEl.textContent = "比对中，请稍候…";
+    try { await fn(); statusEl.textContent = ""; }
+    catch(e){ statusEl.textContent = ""; alert("请求失败：" + e); }
+    finally { btn.disabled = false; }
+  };
+}
+
+/* ---------- 目录结果 ---------- */
+function renderDirResult(container, data){
+  const s = data.summary;
+  let h = renderBadges(s);
+  if (data.truncated) h += `<div class="msg warn">结果过多，仅展示前 ${data.details.length} 条</div>`;
+  h += '<div class="msg info">点击「不同 / 仅左侧 / 仅右侧」的行，可展开查看该文件的具体内容差异；点击顶部徽标可按状态筛选。</div>';
+  h += '<div class="filter-target"><table><thead><tr><th>路径</th><th>状态</th><th>左侧大小</th><th>右侧大小</th><th>左侧MD5</th><th>右侧MD5</th><th>内容差异</th></tr></thead><tbody>';
+  for (const d of data.details){
+    const clickable = d.status !== "same";
+    h += `<tr class="filter-row st-${d.status}${clickable ? " clickable" : ""}"${clickable ? ` data-path="${esc(d.path)}"` : ""}>
+      <td>${esc(d.path)}</td><td>${STATUS_TEXT[d.status] || d.status}</td>
+      <td>${fmtSize(d.left_size)}</td><td>${fmtSize(d.right_size)}</td>
+      <td class="mono">${esc(d.left_md5 || "-")}</td><td class="mono">${esc(d.right_md5 || "-")}</td>
+      <td>${clickable ? '<button class="link" tabindex="-1">查看差异</button>' : ""}</td></tr>`;
+  }
+  h += "</tbody></table></div>";
+  container.innerHTML = h;
+  if (data.compare_id) attachDirActions(container, data.compare_id);
+  attachBadgeFilter(container);
+}
+
+function jarBadges(s){
+  return `<div class="badges">
+    <span class="badge ok">相同 ${s.same}</span><span class="badge bad">不同 ${s.different}</span>
+    <span class="badge warn">仅左侧 ${s.only_in_left}</span><span class="badge warn">仅右侧 ${s.only_in_right}</span>
+    ${s.ignored ? `<span class="badge muted">已忽略 ${s.ignored}</span>` : ""}</div>`;
+}
+function entryActionBtn(d, depth){
+  const p = esc(d.path);
+  if (d.status === "only_in_left" || d.status === "only_in_right")
+    return `<button class="entry-action link" data-path="${p}" data-mode="diff" data-depth="${depth}">查看</button>`;
+  if (d.entry_kind === "nested-archive")
+    return `<button class="entry-action link" data-path="${p}" data-mode="expand" data-depth="${depth}">展开</button>
+            <button class="entry-action link" data-path="${p}" data-mode="diff" data-depth="${depth}">摘要</button>`;
+  return `<button class="entry-action link" data-path="${p}" data-mode="diff" data-depth="${depth}">查看差异</button>`;
+}
+function jarTableHtml(details, prefix, depth){
+  let rows = "";
+  for (const d of details){
+    const full = prefix ? prefix + "!" + d.path : d.path;
+    rows += `<tr class="filter-row st-${d.status}">
+      <td>${esc(d.path)}</td><td>${STATUS_TEXT[d.status] || d.status}</td>
+      <td>${KIND_TEXT[d.entry_kind] || d.entry_kind || "-"}</td>
+      <td>${fmtSize(d.left_size)}</td><td>${fmtSize(d.right_size)}</td>
+      <td>${entryActionBtn({...d, path: full}, depth)}</td></tr>`;
+  }
+  return `<table><thead><tr><th>条目路径</th><th>状态</th><th>类型</th><th>左侧大小</th><th>右侧大小</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function renderEntryDetail(data, parentPath, depth){
+  if (data.mode === "expand"){
+    let h = jarBadges(data.summary);
+    if (data.truncated) h += '<div class="msg warn">差异条目过多，已截断</div>';
+    h += data.details.length
+      ? jarTableHtml(data.details, parentPath, depth + 1)
+      : '<div class="msg ok">内部条目一致（或全部被忽略规则过滤）</div>';
+    return h;
+  }
+  let h = "";
+  if (data.note) h += `<div class="msg info">${esc(data.note)}</div>`;
+  if (data.preview != null) h += `<pre class="code">${esc(data.preview)}</pre>`;
+  const d = data.diff;
+  if (d){
+    if (d.mode === "html") h += `<div class="htmldiff">${d.html}</div>`;
+    else if (d.mode === "text") h += `<pre class="code">${esc(d.text)}</pre>`;
+    else if (d.mode === "note") h += `<div class="msg warn">${esc(d.text)}</div>`;
+    else if (d.mode === "summary")
+      h += `<table class="kv"><tbody>${d.rows.map(r =>
+        `<tr><th>${esc(r[0])}</th><td class="mono">${esc(r[1])}</td></tr>`).join("")}</tbody></table>`;
+  }
+  return h || '<div class="msg info">无可展示内容</div>';
+}
+function attachJarActions(container, compareId){
+  container.dataset.compareId = compareId || "";
+  if (container.dataset.bound) return;
+  container.dataset.bound = "1";
+  container.addEventListener("click", async e => {
+    const btn = e.target.closest(".entry-action");
+    if (!btn) return;
+    const tr = btn.closest("tr");
+    const next = tr.nextElementSibling;
+    if (next && next.classList.contains("detail-row")){ next.remove(); return; }
+    const dtr = document.createElement("tr");
+    dtr.className = "detail-row";
+    dtr.innerHTML = '<td colspan="6"><div class="loading">加载中…</div></td>';
+    tr.after(dtr);
+    const cell = dtr.querySelector("td");
+    try {
+      const data = await postJSON("/api/compare/jar/entry",
+        {compare_id: container.dataset.compareId, path: btn.dataset.path, mode: btn.dataset.mode});
+      if (!data.success){ cell.innerHTML = `<div class="msg error">${esc(data.message)}</div>`; return; }
+      cell.innerHTML = renderEntryDetail(data, btn.dataset.path, parseInt(btn.dataset.depth || "1", 10));
+    } catch(err){ cell.innerHTML = `<div class="msg error">${esc(err)}</div>`; }
+  });
+}
+function renderFileDiffDetail(data, compareId, path){
+  let h = "";
+  if (data.encodings) h += `<div class="msg info">编码：左 ${esc(data.encodings[0])} / 右 ${esc(data.encodings[1])}</div>`;
+  if (data.kind === "binary" && data.status === "different" && compareId){
+    h += `<div class="toolbar"><button class="primary force-text" data-path="${esc(path)}"
+      style="padding:6px 14px;font-size:12px">强制按文本比对</button>
+      <small class="hint">若该文件实际是文本（如含中文注释的脚本），点击强制展示行级差异</small></div>`;
+  }
+  return h + renderEntryDetail(data, "", 1);
+}
+function renderBadges(counts){
+  const items = [
+    {k:"same", cls:"ok",   label:"相同"},
+    {k:"different", cls:"bad",  label:"不同"},
+    {k:"only_in_left", cls:"warn", label:"仅左侧"},
+    {k:"only_in_right", cls:"warn", label:"仅右侧"},
+  ];
+  let h = '<div class="badges">';
+  for (const it of items){
+    const n = counts[it.k] ?? 0;
+    h += `<span class="badge ${it.cls}" data-filter="${it.k}">${it.label} ${n}</span>`;
+  }
+  if (counts.ignored){
+    h += `<span class="badge muted" data-filter="ignored" data-special="1">已忽略 ${counts.ignored}</span>`;
+  }
+  h += '</div>';
+  return h;
+}
+function attachBadgeFilter(container){
+  const resultEl = container.querySelector('.filter-target');
+  if (!resultEl) return;
+  container.querySelectorAll('.badge[data-filter]').forEach(badge => {
+    badge.addEventListener('click', () => {
+      const f = badge.dataset.filter;
+      const isSpecial = badge.dataset.special === "1";
+      const sameAgain = container.dataset.activeFilter === f;
+      let bar = container.querySelector('.filter-bar');
+      if (sameAgain){
+        delete container.dataset.activeFilter;
+        resultEl.querySelectorAll('tr').forEach(tr => tr.style.display = '');
+        container.querySelectorAll('.badge[data-filter]').forEach(b => b.classList.remove('dim'));
+        if (bar) bar.remove();
+        return;
+      }
+      container.dataset.activeFilter = f;
+      container.querySelectorAll('.badge[data-filter]').forEach(b => {
+        b.classList.toggle('dim', b !== badge);
+      });
+      if (isSpecial){
+        resultEl.querySelectorAll('tr').forEach(tr => tr.style.display = 'none');
+      } else {
+        resultEl.querySelectorAll('tr').forEach(tr => {
+          if (!tr.classList.contains('filter-row')) return;
+          tr.style.display = tr.classList.contains('st-' + f) ? '' : 'none';
+        });
+      }
+      if (!bar){
+        bar = document.createElement('div');
+        bar.className = 'filter-bar msg info';
+        container.insertBefore(bar, resultEl);
+      }
+      const total = resultEl.querySelectorAll('tr.filter-row').length;
+      const matched = isSpecial ? 0 : resultEl.querySelectorAll(`tr.st-${f}`).length;
+      bar.innerHTML = `当前筛选：<b>${esc(badge.textContent.trim().split(' ')[0])}</b>
+        — ${isSpecial ? '该类别条目在比对时已被忽略规则过滤，不在清单中'
+                       : `匹配 ${matched} / 共 ${total} 条`}
+        <button class="link" data-clear>清除筛选</button>`;
+      bar.querySelector('[data-clear]').onclick = () => badge.click();
+    });
+  });
+}
+function attachDirActions(container, compareId){
+  container.dataset.compareId = compareId || "";
+  if (container.dataset.bound) return;
+  container.dataset.bound = "1";
+  container.addEventListener("click", async e => {
+    const fbtn = e.target.closest(".force-text");
+    if (fbtn){
+      const cell = fbtn.closest("td");
+      cell.innerHTML = '<div class="loading">加载中…</div>';
+      try {
+        const d2 = await postJSON("/api/compare/dir/entry",
+          {compare_id: container.dataset.compareId, path: fbtn.dataset.path, force_text: true});
+        cell.innerHTML = d2.success
+          ? renderFileDiffDetail(d2, container.dataset.compareId, fbtn.dataset.path)
+          : `<div class="msg error">${esc(d2.message)}</div>`;
+      } catch(err){ cell.innerHTML = `<div class="msg error">${esc(err)}</div>`; }
+      return;
+    }
+    const tr = e.target.closest("tr.clickable");
+    if (!tr || !container.contains(tr)) return;
+    const next = tr.nextElementSibling;
+    if (next && next.classList.contains("detail-row")){ next.remove(); return; }
+    const dtr = document.createElement("tr");
+    dtr.className = "detail-row";
+    dtr.innerHTML = '<td colspan="7"><div class="loading">加载中…</div></td>';
+    tr.after(dtr);
+    const cell = dtr.querySelector("td");
+    try {
+      const data = await postJSON("/api/compare/dir/entry",
+        {compare_id: container.dataset.compareId, path: tr.dataset.path});
+      if (!data.success){ cell.innerHTML = `<div class="msg error">${esc(data.message)}</div>`; return; }
+      cell.innerHTML = renderFileDiffDetail(data, container.dataset.compareId, tr.dataset.path);
+    } catch(err){ cell.innerHTML = `<div class="msg error">${esc(err)}</div>`; }
+  });
+}
+function renderJarResult(container, data){
+  let h = renderBadges(data.summary);
+  if (data.truncated) h += '<div class="msg warn">差异条目过多，已截断</div>';
+  const hasRows = data.details.length > 0;
+  h += '<div class="msg info">点击「查看差异」展示条目内容对照；嵌套包点「展开」逐层查看；点击顶部徽标可按状态筛选。</div>';
+  h += '<div class="filter-target">';
+  h += hasRows ? jarTableHtml(data.details, "", 1)
+    : '<div class="msg ok">两个包内容一致（在忽略规则范围内）</div>';
+  h += '</div>';
+  container.innerHTML = h;
+  if (hasRows) attachJarActions(container, data.compare_id);
+  attachBadgeFilter(container);
+}
+function renderTextResult(container, data){
+  if (data.same){ container.innerHTML = '<div class="msg ok">内容一致</div>'; return; }
+  let h = "";
+  if (data.encodings) h += `<div class="msg info">编码：左 ${esc(data.encodings[0])} / 右 ${esc(data.encodings[1])}</div>`;
+  if (data.html) h += `<div class="htmldiff">${data.html}</div>`;
+  else if (data.text) h += `<pre class="code">${esc(data.text)}</pre>`;
+  container.innerHTML = h;
+}
+function renderExcelResult(container, data){
+  const s = data.summary;
+  let h = `<div class="badges">
+    <span class="badge ok">相同Sheet ${s.same_sheets}</span><span class="badge bad">不同Sheet ${s.different_sheets}</span>
+    <span class="badge warn">仅左侧 ${s.only_in_left}</span><span class="badge warn">仅右侧 ${s.only_in_right}</span>
+    <span class="badge ${s.diff_cell_count ? "bad" : "ok"}">差异单元格 ${s.diff_cell_count}${data.truncated ? "+" : ""}</span></div>`;
+  if (data.truncated) h += '<div class="msg warn">差异单元格超过上限，结果已截断</div>';
+  if (!data.data_only) h += '<div class="msg info">当前为公式文本比对模式</div>';
+  for (const sh of data.sheets){
+    h += `<details class="sheet" ${sh.status === "different" ? "open" : ""}>
+      <summary>${esc(sh.sheet_name)} — ${SHEET_STATUS[sh.status] || sh.status}</summary>`;
+    if (sh.status === "different"){
+      h += '<table><thead><tr><th>单元格</th><th>左侧值</th><th>右侧值</th></tr></thead><tbody>';
+      for (const d of sh.diffs)
+        h += `<tr><td class="mono">${esc(d.cell)}</td><td>${esc(d.left)}</td><td>${esc(d.right)}</td></tr>`;
+      h += "</tbody></table>";
+    } else if (sh.status.startsWith("only_in")) h += '<div class="msg warn">该 Sheet 仅存在于一侧</div>';
+    else h += '<div class="msg ok">内容一致</div>';
+    h += "</details>";
+  }
+  container.innerHTML = h;
+}
+function renderBinaryResult(container, data){
+  let h = data.same ? '<div class="msg ok">内容一致</div>' : '<div class="msg error">内容不同</div>';
+  if (data.note) h += `<div class="msg info">${esc(data.note)}</div>`;
+  const rows = [["左侧大小", fmtSize(data.left.size)], ["右侧大小", fmtSize(data.right.size)],
+                ["左侧 MD5", data.left.md5], ["右侧 MD5", data.right.md5]];
+  h += '<table class="kv"><tbody>' +
+    rows.map(r => `<tr><th>${r[0]}</th><td class="mono">${esc(r[1])}</td></tr>`).join("") + "</tbody></table>";
+  container.innerHTML = h;
+}
+function renderAutoResult(container, data){
+  container.innerHTML = `<div class="msg info">自动识别类型：<b>${esc(KIND_LABEL[data.kind] || data.kind)}</b></div><div id="auto-body"></div>`;
+  const body = $("auto-body");
+  switch (data.kind){
+    case "dir":  renderDirResult(body, data); break;
+    case "jar":  renderJarResult(body, data); break;
+    case "xlsx": renderExcelResult(body, data); break;
+    case "text": renderTextResult(body, data); break;
+    case "docx": case "pptx": renderOoxmlResult(body, data); break;
+    default:     renderBinaryResult(body, data);
+  }
+}
+function renderOoxmlResult(container, data){
+  if (data.note) container.innerHTML = `<div class="msg info">${esc(data.note)}</div>`;
+  let h = renderBadges({same: data.same ? 1 : 0, different: data.same ? 0 : 1,
+                        only_in_left:0, only_in_right:0, ignored:0});
+  const s = data.summary || {};
+  h += `<div class="msg info">段落/幻灯片级差异：新增 ${s.added||0} ｜ 删除 ${s.removed||0} ｜ 修改 ${s.changed||0}</div>`;
+  if (data.changes && data.changes.length){
+    h += '<table><thead><tr><th>类型</th><th>位置</th><th>左</th><th>右</th></tr></thead><tbody>';
+    for (const c of data.changes){
+      h += `<tr><td>${esc(c.type)}</td><td>${esc(c.id||"")}</td><td>${esc(c.left||"")}</td><td>${esc(c.right||"")}</td></tr>`;
+    }
+    h += "</tbody></table>";
+  }
+  if (data.html) h += `<div class="htmldiff">${data.html}</div>`;
+  else if (data.text) h += `<pre class="code">${esc(data.text)}</pre>`;
+  container.innerHTML = h;
+}
+
+/* ---------- 自动比对 ---------- */
+$("auto-btn").onclick = withBusy($("auto-btn"), $("auto-status"), async () => {
+  const lp = $("auto-left-path").value.trim(),  lf = $("auto-left-file").files[0];
+  const rp = $("auto-right-path").value.trim(), rf = $("auto-right-file").files[0];
+  if (!lp && !lf){ alert("左侧请填写路径或选择文件"); return; }
+  if (!rp && !rf){ alert("右侧请填写路径或选择文件"); return; }
+  const fd = new FormData();
+  if (lf) fd.append("left", lf);  else fd.append("left_path", lp);
+  if (rf) fd.append("right", rf); else fd.append("right_path", rp);
+  fd.append("use_saved_rules", $("auto-usesaved").checked ? "true" : "false");
+  fd.append("ignore", $("auto-ignore").value);
+  const data = await postForm("/api/compare/auto", fd);
+  if (!data.success){ failBox($("auto-result"), data.message); return; }
+  renderAutoResult($("auto-result"), data);
+});
+
+/* ---------- 目录 ---------- */
+$("dir-btn").onclick = withBusy($("dir-btn"), $("dir-status"), async () => {
+  const dir1 = $("dir1").value.trim(), dir2 = $("dir2").value.trim();
+  if (!dir1 || !dir2){ alert("请输入两个目录路径"); return; }
+  const data = await postJSON("/api/compare/dir", {dir1, dir2,
+    compare_content: !$("dir-sizeonly").checked, only_diff: $("dir-onlydiff").checked,
+    use_saved_rules: $("dir-usesaved").checked, ignore: $("dir-ignore").value});
+  if (!data.success){ failBox($("dir-result"), data.message); return; }
+  renderDirResult($("dir-result"), data);
+});
+
+/* ---------- Jar ---------- */
+$("jar-btn").onclick = withBusy($("jar-btn"), $("jar-status"), async () => {
+  const p1 = $("jar1-path").value.trim(), f1 = $("jar1-file").files[0];
+  const p2 = $("jar2-path").value.trim(), f2 = $("jar2-file").files[0];
+  if (!p1 && !f1){ alert("请提供 Jar1（路径或上传）"); return; }
+  if (!p2 && !f2){ alert("请提供 Jar2（路径或上传）"); return; }
+  const fd = new FormData();
+  if (f1) fd.append("jar1", f1); else fd.append("jar1_path", p1);
+  if (f2) fd.append("jar2", f2); else fd.append("jar2_path", p2);
+  fd.append("ignore_sign", $("jar-ignoresign").checked ? "true" : "false");
+  fd.append("ignores", $("jar-ignores").value);
+  fd.append("use_saved_rules", $("jar-usesaved").checked ? "true" : "false");
+  fd.append("ignore", $("jar-ignore").value);
+  const data = await postForm("/api/compare/jar", fd);
+  if (!data.success){ failBox($("jar-result"), data.message); return; }
+  renderJarResult($("jar-result"), data);
+});
+
+/* ---------- 文本 ---------- */
+$("file-btn").onclick = withBusy($("file-btn"), $("file-status"), async () => {
+  const p1 = $("file1-path").value.trim(), f1 = $("file1-file").files[0];
+  const p2 = $("file2-path").value.trim(), f2 = $("file2-file").files[0];
+  if (!p1 && !f1){ alert("请提供文件1（路径或上传）"); return; }
+  if (!p2 && !f2){ alert("请提供文件2（路径或上传）"); return; }
+  const fd = new FormData();
+  if (f1) fd.append("file1", f1); else fd.append("file1_path", p1);
+  if (f2) fd.append("file2", f2); else fd.append("file2_path", p2);
+  const data = await postForm("/api/compare/file", fd);
+  if (!data.success){ failBox($("file-result"), data.message); return; }
+  renderTextResult($("file-result"), data);
+});
+
+/* ---------- Excel ---------- */
+$("excel-btn").onclick = withBusy($("excel-btn"), $("excel-status"), async () => {
+  const p1 = $("excel1-path").value.trim(), f1 = $("excel1-file").files[0];
+  const p2 = $("excel2-path").value.trim(), f2 = $("excel2-file").files[0];
+  if (!p1 && !f1){ alert("请提供 Excel1（路径或上传）"); return; }
+  if (!p2 && !f2){ alert("请提供 Excel2（路径或上传）"); return; }
+  const fd = new FormData();
+  if (f1) fd.append("excel1", f1); else fd.append("excel1_path", p1);
+  if (f2) fd.append("excel2", f2); else fd.append("excel2_path", p2);
+  fd.append("compare_formula", $("excel-formula").checked ? "true" : "false");
+  const data = await postForm("/api/compare/excel", fd);
+  if (!data.success){ failBox($("excel-result"), data.message); return; }
+  renderExcelResult($("excel-result"), data);
+});
+
+/* ---------- 三向比对 ---------- */
+$("three-btn").onclick = withBusy($("three-btn"), $("three-status"), async () => {
+  const bp = $("three-base-path").value.trim(), bf = $("three-base-file").files[0];
+  const lp = $("three-left-path").value.trim(), lf = $("three-left-file").files[0];
+  const rp = $("three-right-path").value.trim(), rf = $("three-right-file").files[0];
+  if (!bp && !bf){ alert("请提供基线（路径或上传）"); return; }
+  if (!lp && !lf){ alert("请提供版本A（路径或上传）"); return; }
+  if (!rp && !rf){ alert("请提供版本B（路径或上传）"); return; }
+  const fd = new FormData();
+  if (bf) fd.append("base", bf); else fd.append("base_path", bp);
+  if (lf) fd.append("left", lf); else fd.append("left_path", lp);
+  if (rf) fd.append("right", rf); else fd.append("right_path", rp);
+  fd.append("use_saved_rules", $("three-usesaved").checked ? "true" : "false");
+  fd.append("ignore", $("three-ignore").value);
+  const data = await postForm("/api/compare/three", fd);
+  if (!data.success){ failBox($("three-result"), data.message); return; }
+  renderThreeResult($("three-result"), data);
+});
+
+function renderThreeResult(container, data){
+  if (data.note && !data.items){ container.innerHTML = `<div class="msg info">${esc(data.note)}</div>`; return; }
+  const s = data.summary || {};
+  let h = `<div class="badges">
+    <span class="badge muted">基线独有 ${s.base_only||0}</span>
+    <span class="badge warn">A独有 ${s.a_only||0}</span>
+    <span class="badge warn">B独有 ${s.b_only||0}</span>
+    <span class="badge bad">共同 ${s.common||0}</span>
+    <span class="badge bad">共同(冲突) ${s.common_conflict||0}</span>
+    <span class="badge ok">相同 ${s.same||0}</span></div>`;
+  if (data.note) h += `<div class="msg info">${esc(data.note)}</div>`;
+  if (data.truncated) h += '<div class="msg warn">差异条目过多，已截断</div>';
+  if (data.kind === "text" && data.text_diff){
+    h += '<div class="msg info">左(A) 与 右(B) 文本差异：</div>';
+    if (data.text_diff.html) h += `<div class="htmldiff">${data.text_diff.html}</div>`;
+    else if (data.text_diff.text) h += `<pre class="code">${esc(data.text_diff.text)}</pre>`;
+  }
+  if (data.items && data.items.length){
+    h += '<table><thead><tr><th>路径/标识</th><th>分类</th><th>A方向</th><th>B方向</th></tr></thead><tbody>';
+    const catLabel = {base_only:"基线独有", a_only:"A独有", b_only:"B独有", common:"共同"};
+    for (const it of data.items){
+      let cl = catLabel[it.category] || it.category;
+      if (it.conflict) cl += " (冲突)";
+      h += `<tr class="${it.conflict ? 'st-different' : ''}"><td>${esc(it.path)}</td><td>${esc(cl)}</td>
+        <td>${esc(it.a_dir)}</td><td>${esc(it.b_dir)}</td></tr>`;
+    }
+    h += "</tbody></table>";
+  } else {
+    h += '<div class="msg ok">三向无差异项（相对基线完全一致）</div>';
+  }
+  container.innerHTML = h;
+}
+
+/* ---------- 批量比对 ---------- */
+$("batch-btn").onclick = withBusy($("batch-btn"), $("batch-status"), async () => {
+  const lines = $("batch-pairs").value.split("\n").map(l=>l.trim()).filter(Boolean);
+  const pairs = [];
+  for (const line of lines){
+    const parts = line.split("|").map(x=>x.trim());
+    if (parts.length < 2 || !parts[0] || !parts[1]){ alert("每行需为：左路径 | 右路径\n错误行：" + line); return; }
+    pairs.push({left: parts[0], right: parts[1]});
+  }
+  if (!pairs.length){ alert("请填写至少一对目录"); return; }
+  const body = {pairs, use_saved_rules: $("batch-usesaved").checked, ignore: $("batch-ignore").value};
+  const data = await postJSON("/api/compare/batch", body);
+  if (!data.success){ failBox($("batch-result"), data.message); return; }
+  if (data.async){
+    followTask(data.task_id);
+  } else {
+    renderBatchMatrix($("batch-result"), data.matrix);
+  }
+});
+
+function renderBatchMatrix(container, matrix){
+  if (!matrix || !matrix.matrix) { container.innerHTML = '<div class="msg info">无结果</div>'; return; }
+  const t = matrix.totals || {};
+  let h = `<div class="badges">
+    <span class="badge ok">相同 ${t.same||0}</span>
+    <span class="badge bad">不同 ${t.different||0}</span>
+    <span class="badge warn">仅左 ${t.only_in_left||0}</span>
+    <span class="badge warn">仅右 ${t.only_in_right||0}</span>
+    <span class="badge muted">已忽略 ${t.ignored||0}</span></div>`;
+  h += '<table><thead><tr><th>左</th><th>右</th><th>相同</th><th>不同</th><th>仅左</th><th>仅右</th><th>忽略</th></tr></thead><tbody>';
+  for (const m of matrix.matrix){
+    const c = m.counts;
+    h += `<tr><td>${esc(m.left)}</td><td>${esc(m.right)}</td>
+      <td>${c.same||0}</td><td>${c.different||0}</td><td>${c.only_in_left||0}</td>
+      <td>${c.only_in_right||0}</td><td>${c.ignored||0}</td></tr>`;
+  }
+  h += "</tbody></table>";
+  container.innerHTML = h;
+}
+
+function followTask(id){
+  const bar = $("batch-bar"); const prog = $("batch-progress");
+  prog.style.display = "block"; bar.style.width = "0%";
+  $("batch-status").textContent = "异步任务进行中…";
+  const url = "/api/tasks/" + id + "/stream" + tokenQuery();
+  let es = null;
+  try { es = new EventSource(url); } catch(e){ es = null; }
+  let closed = false;
+  const finish = (task) => {
+    if (closed) return; closed = true;
+    if (es) es.close();
+    prog.style.display = "none";
+    $("batch-status").textContent = "";
+    if (task && task.result && task.result.matrix) renderBatchMatrix($("batch-result"), task.result.matrix);
+    else if (task && task.state === "failed") failBox($("batch-result"), "任务失败：" + (task.error||""));
+    else renderBatchMatrix($("batch-result"), {matrix: {matrix: [], totals: {}}});
+  };
+  if (es){
+    es.onmessage = (e) => {
+      try {
+        const t = JSON.parse(e.data);
+        const pct = t.percent || 0;
+        bar.style.width = pct + "%";
+        if (["success","failed","canceled"].includes(t.state)) finish(t);
+      } catch(err){}
+    };
+    es.onerror = () => { if (!closed) pollTaskFallback(id, finish); };
+  } else {
+    pollTaskFallback(id, finish);
+  }
+}
+async function pollTaskFallback(id, finish){
+  const iv = setInterval(async () => {
+    try {
+      const t = await getJSON("/api/tasks/" + id);
+      if (!t.success){ clearInterval(iv); return; }
+      const pct = t.task.percent || 0;
+      $("batch-bar").style.width = pct + "%";
+      if (["success","failed","canceled"].includes(t.task.state)){ clearInterval(iv); finish(t.task); }
+    } catch(e){}
+  }, 800);
+}
+
+/* ---------- 历史记录 ---------- */
+let histOffset = 0, histLimit = 20;
+function loadHistory(){
+  const typ = $("hist-type").value;
+  const q = new URLSearchParams({limit: histLimit, offset: histOffset});
+  if (typ) q.set("type", typ);
+  getJSON("/api/history?" + q.toString()).then(d => {
+    if (!d.success){ failBox($("hist-list"), d.message); return; }
+    renderHistory(d);
+  }).catch(e => failBox($("hist-list"), e));
+}
+function renderHistory(d){
+  const list = $("hist-list");
+  if (!d.items.length){ list.innerHTML = '<div class="msg info">暂无历史记录</div>'; $("hist-pageinfo").textContent = "第 1 页"; return; }
+  $("hist-pageinfo").textContent = "第 " + (histOffset / histLimit + 1) + " 页 ｜ 共 " + d.total + " 条";
+  let h = "";
+  for (const r of d.items){
+    const sm = r.summary || {};
+    let smText = Object.keys(sm).map(k => k + ":" + JSON.stringify(sm[k])).join("  ");
+    if (r.type === "batch") smText = "对数 " + (sm.pairs||"?");
+    h += `<div class="hist-item" data-id="${esc(r.id)}" data-cid="${esc(r.compare_id||"")}">
+      <div class="meta">[${esc(r.type)}] ${esc(r.ts)} ｜ ${esc(r.left)} → ${esc(r.right)}</div>
+      <div class="meta">${esc(smText)}</div>
+      <div class="acts">
+        <button class="ghost act-rerun">重新执行</button>
+        <button class="ghost act-report">导出报告</button>
+        <button class="ghost act-patch">导出补丁</button>
+        <button class="ghost act-del">删除</button>
+      </div></div>`;
+  }
+  list.innerHTML = h;
+  list.querySelectorAll(".hist-item").forEach(el => {
+    const id = el.dataset.id, cid = el.dataset.cid;
+    el.querySelector(".act-rerun").onclick = () => rerunHistory(id);
+    el.querySelector(".act-report").onclick = () => exportHistory(cid, "html");
+    el.querySelector(".act-patch").onclick = () => exportHistory(cid, "patch");
+    el.querySelector(".act-del").onclick = async () => {
+      if (!confirm("确认删除该历史记录？")) return;
+      const r = await postJSON("/api/history/" + id, {});
+      if (r.success){ toast("已删除"); loadHistory(); }
+      else alert(r.message || "删除失败");
+    };
+  });
+}
+function downloadBlob(url){
+  // 通过带 token 的 fetch 取 blob 后触发下载
+  fetch(url, {headers: tokenHeaders()}).then(r => r.blob()).then(b => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(b);
+    a.download = (url.split("/").pop() || "download");
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }).catch(e => alert("下载失败：" + e));
+}
+function exportHistory(cid, kind){
+  if (!cid){ alert("该记录会话已过期，请先「重新执行」再导出"); return; }
+  if (kind === "patch") downloadBlob("/api/export/patch" + tokenQuery());
+  else downloadBlob("/api/export/report?format=html" + tokenQuery());
+}
+async function rerunHistory(id){
+  const r = await getJSON("/api/history/" + id);
+  if (!r.success){ alert(r.message); return; }
+  const rec = r.record; const p = rec.params || {};
+  const map = {
+    auto: ["/api/compare/auto", {left_path:p.left, right_path:p.right, use_saved_rules:p.use_saved_rules, ignore:p.ignore}],
+    dir:  ["/api/compare/dir", {dir1:p.dir1, dir2:p.dir2, compare_content:p.compare_content, only_diff:p.only_diff, use_saved_rules:p.use_saved_rules, ignore:p.ignore}],
+    jar:  ["/api/compare/jar", {jar1_path:p.left, jar2_path:p.right, ignore_sign:p.ignore_sign, ignores:p.ignores, use_saved_rules:p.use_saved_rules, ignore:p.ignore}],
+    file: ["/api/compare/file", {file1:p.left, file2:p.right}],
+    excel:["/api/compare/excel", {excel1_path:p.left, excel2_path:p.right, compare_formula:p.compare_formula}],
+    three:["/api/compare/three", {base:p.base, left:p.left, right:p.right, use_saved_rules:p.use_saved_rules, ignore:p.ignore}],
+    ooxml:["/api/compare/ooxml", {left_path:p.left, right_path:p.right}],
+  };
+  const m = map[rec.type];
+  if (!m){ alert("该类型不支持重新执行：" + rec.type); return; }
+  const data = await postJSON(m[0], m[1]);
+  if (!data.success){ alert(data.message); return; }
+  // 切换到对应面板渲染
+  const tabMap = {auto:"auto", dir:"dir", jar:"jar", file:"text", excel:"excel", three:"three"};
+  const tab = tabMap[rec.type];
+  document.querySelector('.tab[data-tab="'+tab+'"]').click();
+  if (rec.type === "dir") renderDirResult($("dir-result"), data);
+  else if (rec.type === "jar") renderJarResult($("jar-result"), data);
+  else if (rec.type === "file") renderTextResult($("file-result"), data);
+  else if (rec.type === "excel") renderExcelResult($("excel-result"), data);
+  else if (rec.type === "three") renderThreeResult($("three-result"), data);
+  else renderAutoResult($("auto-result"), data);
+  toast("已按原参数重新执行");
+}
+$("hist-refresh").onclick = () => { histOffset = 0; loadHistory(); };
+$("hist-prev").onclick = () => { histOffset = Math.max(0, histOffset - histLimit); loadHistory(); };
+$("hist-next").onclick = () => { histOffset += histLimit; loadHistory(); };
+$("hist-type").onchange = () => { histOffset = 0; loadHistory(); };
+
+/* ---------- 忽略规则弹窗 ---------- */
+let ignoreRules = [];
+function openIgnore(){
+  getJSON("/api/ignore/rules").then(d => {
+    if (!d.success){ alert(d.message); return; }
+    ignoreRules = d.rules || [];
+    renderIgnoreList();
+    $("ignore-mask").classList.add("show");
+  }).catch(e => alert(e));
+}
+function renderIgnoreList(){
+  const box = $("ignore-list");
+  if (!ignoreRules.length){ box.innerHTML = '<div class="msg info">暂无规则，下方可添加</div>'; return; }
+  let h = "";
+  ignoreRules.forEach((r, i) => {
+    h += `<div class="ignore-row" data-i="${i}">
+      <input type="text" value="${esc(r.pattern)}" data-f="pattern">
+      <select data-f="scope">
+        ${["all","dir","jar","text"].map(s=>`<option value="${s}"${r.scope===s?" selected":""}>${s}</option>`).join("")}
+      </select>
+      <input type="text" value="${esc(r.comment)}" data-f="comment">
+      <input type="checkbox" ${r.enabled?"checked":""} data-f="enabled" title="启用">
+      <button class="ghost" data-del="${i}">删除</button>
+    </div>`;
+  });
+  box.innerHTML = h;
+  box.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    ignoreRules.splice(parseInt(b.dataset.del,10),1); renderIgnoreList();
+  });
+  box.querySelectorAll(".ignore-row").forEach(row => {
+    row.querySelectorAll("[data-f]").forEach(inp => {
+      inp.onchange = inp.oninput = () => {
+        const i = parseInt(row.dataset.i,10);
+        ignoreRules[i][inp.dataset.f] = inp.type === "checkbox" ? inp.checked : inp.value;
+      };
+    });
+  });
+}
+$("ignore-btn").onclick = openIgnore;
+$("ignore-close").onclick = () => $("ignore-mask").classList.remove("show");
+$("ignore-mask").onclick = (e) => { if (e.target === $("ignore-mask")) $("ignore-mask").classList.remove("show"); };
+$("ig-add").onclick = () => {
+  const pattern = $("ig-pattern").value.trim();
+  if (!pattern){ alert("请填写规则"); return; }
+  ignoreRules.push({id: "r_" + Date.now(), pattern, scope: $("ig-scope").value,
+                    comment: $("ig-comment").value.trim(), enabled: true});
+  $("ig-pattern").value = ""; $("ig-comment").value = "";
+  renderIgnoreList();
+};
+$("ig-save").onclick = async () => {
+  const r = await postJSON("/api/ignore/rules", {rules: ignoreRules});
+  if (r.success){ toast("忽略规则已保存"); } else alert(r.message);
+};
+$("ig-test").onclick = async () => {
+  const path = $("ig-test-path").value.trim();
+  if (!path){ alert("请输入测试路径"); return; }
+  const r = await postJSON("/api/ignore/test",
+    {path, scope: $("ig-test-scope").value, use_saved_rules: true});
+  if (!r.success){ $("ig-test-out").innerHTML = `<div class="msg error">${esc(r.message)}</div>`; return; }
+  if (r.ignored){
+    $("ig-test-out").innerHTML = `<div class="msg warn">命中 ${r.matched.length} 条规则：${esc(r.matched.join("，"))}</div>`;
+  } else {
+    $("ig-test-out").innerHTML = '<div class="msg ok">未命中任何忽略规则</div>';
+  }
+};
+</script>
+</body>
+</html>

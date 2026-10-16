@@ -1,0 +1,9 @@
+负载: 16 片 × 16MB = 256MB   目录: C:\Users\ADMINI~1\AppData\Local\Temp\micro_dnd_4dwy
+顺序写单文件                               0.191s   1343.2 MB/s
+仅 truncate 预分配                       1.752s    146.1 MB/s
+预分配 + 顺序偏移写(同 fd)                    2.086s    122.7 MB/s
+偏移写(不预分配,同 fd)                       0.244s   1048.5 MB/s
+预分配 + 每片重开+seek+写(服务端)               3.097s     82.7 MB/s
+不预分配 + 每片重开+seek+写                   0.359s    713.6 MB/s
+
+EXIT=0

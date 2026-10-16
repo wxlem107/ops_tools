@@ -1,0 +1,19 @@
+{
+  "orders": [
+    {
+      "id": "r-1",
+      "server_steps": [
+        {
+          "steps": [
+            {
+              "message": "已上传至 /opt/上传/主程序.tgz",
+              "logs": [
+                "已上传 主程序.tgz -> /opt/上传/主程序.tgz"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

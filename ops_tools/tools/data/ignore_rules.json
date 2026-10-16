@@ -1,0 +1,53 @@
+{
+  "rules": [
+    {
+      "id": "r_log",
+      "pattern": "*.log",
+      "scope": "all",
+      "comment": "日志文件",
+      "enabled": true
+    },
+    {
+      "id": "r_git",
+      "pattern": ".git/",
+      "scope": "all",
+      "comment": "git 元数据目录",
+      "enabled": true
+    },
+    {
+      "id": "r_sign",
+      "pattern": "META-INF/*.SF|*.DSA|*.RSA",
+      "scope": "jar",
+      "comment": "jar 签名文件（重打包必变）",
+      "enabled": true
+    },
+    {
+      "id": "r_pyc",
+      "pattern": "__pycache__/",
+      "scope": "all",
+      "comment": "Python 缓存目录",
+      "enabled": true
+    },
+    {
+      "id": "r_thumb",
+      "pattern": "Thumbs.db",
+      "scope": "all",
+      "comment": "缩略图缓存",
+      "enabled": true
+    },
+    {
+      "id": "r_docprops",
+      "pattern": "docProps/",
+      "scope": "all",
+      "comment": "OOXML 文档属性（含易变时间戳）",
+      "enabled": true
+    },
+    {
+      "id": "r_test",
+      "pattern": "*.tmp",
+      "scope": "all",
+      "comment": "测试",
+      "enabled": true
+    }
+  ]
+}

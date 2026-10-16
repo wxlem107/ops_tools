@@ -1,0 +1,559 @@
+{
+  "tasks": [
+    {
+      "id": "126b15d2f0673f5a",
+      "name": "批量目录比对",
+      "kind": "batch",
+      "state": "success",
+      "percent": 100,
+      "message": "完成",
+      "created": 1791612544.2737913,
+      "created_time": "2026-10-10 14:09:04",
+      "started": 1791612544.3043396,
+      "finished": 1791612544.3439977,
+      "duration": 0.04,
+      "user": "127.0.0.1",
+      "target": "",
+      "params": {},
+      "meta": {},
+      "result": {
+        "results": [
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b0_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b0_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "57df2e63262ac820df18795b03deea0b",
+                  "right_md5": "1e4338a1e99b2e84e6c5357219b406eb"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b1_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b1_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "e8a5da2185eb0563c20079ce3ca263ba",
+                  "right_md5": "e66a3849e30c67423bbb54041c2fdc69"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b2_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b2_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "e2ee9ad17fdffb4d4085276497dfb647",
+                  "right_md5": "87bbea99cd64aa772e1420eca3314ceb"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b3_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b3_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "0862dda1a67a1e9309ef05ca13acca1a",
+                  "right_md5": "a50bcb389c7d6c3c18bac48fdabbfcd6"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          }
+        ],
+        "matrix": {
+          "matrix": [
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b0_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b0_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b1_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b1_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b2_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b2_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b3_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_d10j8lak\\b3_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            }
+          ],
+          "totals": {
+            "same": 0,
+            "different": 4,
+            "only_in_left": 0,
+            "only_in_right": 0,
+            "ignored": 0
+          }
+        },
+        "done": true
+      },
+      "error": "",
+      "log": [],
+      "started_time": "2026-10-10 14:09:04",
+      "finished_time": "2026-10-10 14:09:04"
+    },
+    {
+      "id": "985604d88bc75abb",
+      "name": "批量目录比对",
+      "kind": "batch",
+      "state": "success",
+      "percent": 100,
+      "message": "完成",
+      "created": 1791612905.0832784,
+      "created_time": "2026-10-10 14:15:05",
+      "started": 1791612905.0911372,
+      "finished": 1791612905.143098,
+      "duration": 0.05,
+      "user": "127.0.0.1",
+      "target": "",
+      "params": {},
+      "meta": {},
+      "result": {
+        "results": [
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b0_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b0_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "57df2e63262ac820df18795b03deea0b",
+                  "right_md5": "1e4338a1e99b2e84e6c5357219b406eb"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b1_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b1_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "e8a5da2185eb0563c20079ce3ca263ba",
+                  "right_md5": "e66a3849e30c67423bbb54041c2fdc69"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b2_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b2_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "e2ee9ad17fdffb4d4085276497dfb647",
+                  "right_md5": "87bbea99cd64aa772e1420eca3314ceb"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b3_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b3_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "0862dda1a67a1e9309ef05ca13acca1a",
+                  "right_md5": "a50bcb389c7d6c3c18bac48fdabbfcd6"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          }
+        ],
+        "matrix": {
+          "matrix": [
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b0_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b0_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b1_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b1_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b2_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b2_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b3_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_bmlqcprc\\b3_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            }
+          ],
+          "totals": {
+            "same": 0,
+            "different": 4,
+            "only_in_left": 0,
+            "only_in_right": 0,
+            "ignored": 0
+          }
+        },
+        "done": true
+      },
+      "error": "",
+      "log": [],
+      "started_time": "2026-10-10 14:15:05",
+      "finished_time": "2026-10-10 14:15:05"
+    },
+    {
+      "id": "547f2ffc5113f526",
+      "name": "批量目录比对",
+      "kind": "batch",
+      "state": "success",
+      "percent": 100,
+      "message": "完成",
+      "created": 1791613196.7633436,
+      "created_time": "2026-10-10 14:19:56",
+      "started": 1791613196.771935,
+      "finished": 1791613196.8382702,
+      "duration": 0.07,
+      "user": "127.0.0.1",
+      "target": "",
+      "params": {},
+      "meta": {},
+      "result": {
+        "results": [
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b0_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b0_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "57df2e63262ac820df18795b03deea0b",
+                  "right_md5": "1e4338a1e99b2e84e6c5357219b406eb"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b1_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b1_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "e8a5da2185eb0563c20079ce3ca263ba",
+                  "right_md5": "e66a3849e30c67423bbb54041c2fdc69"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b2_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b2_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "e2ee9ad17fdffb4d4085276497dfb647",
+                  "right_md5": "87bbea99cd64aa772e1420eca3314ceb"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          },
+          {
+            "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b3_a",
+            "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b3_b",
+            "result": {
+              "success": true,
+              "summary": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              },
+              "details": [
+                {
+                  "path": "f.txt",
+                  "status": "different",
+                  "left_size": 3,
+                  "right_size": 3,
+                  "left_md5": "0862dda1a67a1e9309ef05ca13acca1a",
+                  "right_md5": "a50bcb389c7d6c3c18bac48fdabbfcd6"
+                }
+              ],
+              "ignored_list": [],
+              "truncated": false
+            }
+          }
+        ],
+        "matrix": {
+          "matrix": [
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b0_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b0_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b1_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b1_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b2_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b2_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            },
+            {
+              "left": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b3_a",
+              "right": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\diffv2_jqpl6pcn\\b3_b",
+              "counts": {
+                "same": 0,
+                "different": 1,
+                "only_in_left": 0,
+                "only_in_right": 0,
+                "ignored": 0
+              }
+            }
+          ],
+          "totals": {
+            "same": 0,
+            "different": 4,
+            "only_in_left": 0,
+            "only_in_right": 0,
+            "ignored": 0
+          }
+        },
+        "done": true
+      },
+      "error": "",
+      "log": [],
+      "started_time": "2026-10-10 14:19:56",
+      "finished_time": "2026-10-10 14:19:56"
+    }
+  ]
+}

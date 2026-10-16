@@ -1,0 +1,5 @@
+﻿C:\Python27\python.exe => NOT FOUND
+C:\Python27\python2.exe => NOT FOUND
+python2 => NOT FOUND
+python2.7 => NOT FOUND
+py -2 => NOT FOUND

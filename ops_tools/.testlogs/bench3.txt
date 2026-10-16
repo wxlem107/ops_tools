@@ -1,0 +1,6 @@
+compile OK
+=== 256MB / 16MB 分片 / 6 并发 ===
+chunkfile    上传   0.46s =  553.4 MB/s | complete  3.14s | OK | 内容一致 | errs=0
+offset       上传   0.39s =  648.6 MB/s | complete  0.17s | OK | 内容一致 | errs=0
+
+EXIT=0

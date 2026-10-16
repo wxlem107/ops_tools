@@ -1,0 +1,21 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "role": "admin",
+      "servers": [
+        "*"
+      ],
+      "enabled": true,
+      "note": "首次运行自动创建",
+      "created": 1789982602.2771528,
+      "last_login": 1789982602.6626303,
+      "password": {
+        "salt": "db126791877f92be7ea31f5a7542af59",
+        "hash": "c9f41ce7d18b18c5b16cc9474cebb8f1179b609d763e11c8f9d0fb5216de4055",
+        "iter": 120000
+      },
+      "pwd_changed": 1789982602.4395394
+    }
+  ]
+}

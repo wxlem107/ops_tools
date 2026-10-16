@@ -1,0 +1,7 @@
+py_compile 失败: []
+=== selftest ===
+
+=== integration ===
+
+=== py2 lint ===
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 41: illegal multibyte sequence
